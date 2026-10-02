@@ -1,1 +1,0 @@
-queried 1 query against 2 document(s), results in output.txt

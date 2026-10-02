@@ -1,5 +1,0 @@
-# query 1: beta alpha
-Found: beta  (df=1/1 = 1.000, tf=1)
-Found: alpha  (df=1/1 = 1.000, tf=3)
-Phrase [beta alpha]: 1 match(es) in 1 document(s)
-Doc ID: 0, Positions: 1

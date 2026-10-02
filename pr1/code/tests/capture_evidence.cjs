@@ -16,8 +16,11 @@ const root = path.resolve(__dirname, '../..');
     const url = pathToFileURL(path.join(root, 'evidence/pages', name + '.html')).href;
     await page.goto(url, {waitUntil: 'load'});
     await page.evaluate(() => document.fonts.ready);
+    if (await page.locator('main > .footer').count()) {
+      throw new Error('Unexpected page footer in ' + name);
+    }
     await page.screenshot({path: path.join(output, name + '.png'), fullPage: true});
-    records.push({screenshot: name + '.png', title: await page.title(), url,
+    records.push({screenshot: name + '.png', title: await page.title(), sourcePage: 'pages/' + name + '.html',
                   capturedAt: new Date().toISOString(), browserVersion: browser.version()});
     process.stdout.write('Captured ' + name + '.png\n');
   }

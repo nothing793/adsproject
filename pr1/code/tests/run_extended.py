@@ -127,7 +127,7 @@ def run_all():
             peak_working_set_bytes=timing['peak_working_set_bytes']))
         parsed[theta]=actual
     actual=parsed[0.5]
-    # Rebuilding into a fresh directory avoids Windows rename-over-existing limitations.
+    # A separate build provides a byte-for-byte reproducibility check.
     repeat=RESULTS/'shakespeare/repeat_0.5'
     if not (REUSE and (repeat/'index.bin').exists()):
         if (repeat/'index.bin').exists():

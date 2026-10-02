@@ -1,4 +1,0 @@
-pass 1 (statistics): 2 documents, 2 words, 0 stop-word words skipped, 0 positions dropped
-part 1: N=2 documents, V=2 stems, 2 positions, 0 stop words (df/N > 1.000)
-pass 2 (index generation): 2 documents, 2 words, 0 stop-word words skipped, 0 positions dropped
-wrote 2 terms to index.bin and 0 stop words to stoplist.txt

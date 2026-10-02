@@ -1,49 +1,48 @@
-# pr1 测试目录
+# 测试说明
 
-## 当前实验入口
-
-Python 3 + gcc，无第三方 Python 包依赖：
+测试依赖 Python 3 和 gcc。将 `test_data.zip` 解压到 `pr1` 目录后执行：
 
 ```powershell
-python run_extended.py               # 全集构建、独立对拍、查询/边界/修复回归
-python run_extended.py --reuse-indexes # 复用索引，重编译并重新验证内容与查询
-python run_bonus.py                  # 原 C 后端压力与独立 SQLite 外存原型
-python sweep.py                     # 展示最近一次已验证的 θ/τ 文档数表
-python sweep.py --rebuild            # 重新构建与验证再展示
-python make_lab_report.py            # 从日志生成报告素材和截图展示页
+./code/tests/run_lab.ps1 -PythonExe 'python'
 ```
 
-最终全集检查 78 PASS / 0 FAIL；压力测试最高 50 万逻辑 doc_id / 100 万不同词干。它们不等同于 50 万实体文件、4 亿不同词端到端测试。原始数据在 `../../results/`，8 张浏览器截图在 `../../evidence/screenshots/`；浏览器截图生成需要已有 Playwright 和 Edge，运行 `capture_evidence.cjs`（可设置 PLAYWRIGHT_MODULE）。
+也可分别运行：
 
-`prepare_shakespeare.py` 从官方 MIT 镜像提取语料；实际清单与 HTML 已附。`lab_support.py` 保存每次完整命令、stdout/stderr、退出码、墙钟时间和 Windows 峰值 working set。`bonus_probe.c` 调用原 C 内存后端；`bonus_disk_demo.py` 为独立外存演示，不兼容原 index.bin。
+```powershell
+python code/tests/run_extended.py
+python code/tests/review_regression.py
+python code/tests/run_bonus.py
+python code/tests/make_lab_report.py
+```
 
-以下内容保留原合成语料测试说明，其中 21 项及 /tmp 工作路径为历史记录。
+首次运行会构建五组全集索引，耗时数分钟。已有完整索引及 token dump 时，`run_extended.py --reuse-indexes` 复用索引并重新编译、解析和查询；索引缺失时仍执行构建。`run_bonus.py --reuse-indexes` 可复用原 C 后端压力索引。
 
-本目录是 pr1 迷你搜索引擎的测试与实验脚本，对应的正文说明见
-[`../README.md`](../README.md) 第 12 节。
-
-**这里没有构建产物**：所有编译和执行都在临时工作目录里进行（默认 `/tmp/pr1-test`，
-可以用 `run_tests.sh <工作目录>` 换），不会污染 `code/`。
-
-## 文件
-
-| 文件 | 用途 |
+| 文件 | 检查内容 |
 | --- | --- |
-| `run_tests.sh` | 端到端测试入口：编译（零告警）→ 生成语料 → 切词（`index_gen --dump-tokens`）→ 建索引 → 各项校验，逐项打印 PASS/FAIL（当前 21 项全过） |
-| `gen_corpus.py` | 确定性合成语料生成器（没下载莎士比亚全集前用它跑通整条流水线）。功能词比例可调，保证一定会出现"跨文档高频词"这类停用词 |
-| `stem_list.c` | 词干命令行工具：从 stdin 读词、逐行输出词干。只给 `brute_check.py` 用（Python 侧没有 Porter 实现） |
-| `pick_term.py` | 从 `file.txt` 里挑一个词干并打印它的 df / N（可按 df/N 区间、最高频、最稀有），供 `sweep.py` 与阈值测试动态选词 |
-| `brute_check.py` | 独立校验：用另一份实现解析 `index.bin`，与从 `file.txt` 暴力统计的结果逐词条对比（含 df / tf / 位置链、是否剔除了停用词）；另外可以暴力枚举短语出现位置，用来对拍短语查询 |
-| `roundtrip.c` | 读 `index.bin` → 用 `index_save()` 再写一份，供 `cmp` 验证"加载再落盘逐字节相同"（编译时链 `../stem.c`，索引实现在 `../index.h`） |
-| `sweep.py` | 第 4 问的阈值实验：θ ∈ {0.3,0.4,0.5,0.6} × τ ∈ {0.1,0.2,0.3,0.4}，打印 Markdown 表格（stoplist 大小、平均结果集大小、被阈值拦下的比例） |
+| `run_extended.py` | 42 文档的分词、停用词、完整位置索引、查询、阈值边界及空文档，共 78 项 |
+| `brute_check.py` | 独立解析二进制索引，与暴力聚合结果比较 |
+| `stem_list.c` | 批量输出词干，供参考结果聚合使用 |
+| `roundtrip.c` | 加载索引并重新保存，比较字节一致性 |
+| `review_regression.py` | 36 项补充回归，包括 80 组固定随机种子的 AND／短语对照 |
+| `range_roundtrip.c` | 使用 -ftrapv 验证 INT_MAX 位置的加载／保存边界 |
+| `review_malloc_fault.c` | 64 位 Windows 下的位置节点分配失败注入，用于验证构建错误处理 |
+| `run_bonus.py`、`bonus_probe.c` | 原 C 后端的逻辑文档、不同词数和高频位置链规模实验 |
+| `bonus_disk_demo.py` | SQLite 外存索引原型，与原 C 文件格式独立 |
+| `lab_support.py` | 保存命令、输出、退出码、墙钟时间及 Windows 峰值 working set |
+| `prepare_shakespeare.py` | 从 MIT 网站公开镜像提取语料及校验清单 |
+| `make_lab_report.py` | 根据测量与日志生成报告和结果展示页 |
+| `capture_evidence.cjs` | 使用 Edge 重新截取八张展示页，需 Playwright |
 
-## 用法
+测试结果保存在 `pr1/results/`，结果展示页与图片保存在 `pr1/evidence/`。词干算法在参考结果和 C 程序中共享，分词、聚合、二进制解析与查询枚举分别实现。
 
-```bash
-sh run_tests.sh                      # 全套测试，默认工作目录 /tmp/pr1-test
-python3 sweep.py /tmp/pr1-test       # 阈值敏感性实验（先用 run_tests.sh 准备好工作目录）
+补充回归的修正前结果为 17 PASS／19 FAIL，修正后为 36 PASS／0 FAIL。固定随机测试使用种子 793。分配失败测试依赖 GNU 链接器 `--wrap=malloc` 及本次 64 位 Windows 的结构尺寸。
+
+Bonus 最大实测为 500,000 个逻辑文档 ID 和 1,000,000 个不同词。未创建 500,000 个实体文件，未执行 400,000,000 个不同词的完整实验。
+
+截图重建：
+
+```powershell
+node code/tests/capture_evidence.cjs
 ```
 
-`run_tests.sh` 依赖 `python3`、`gcc`、`tr`、`diff`、`cmp`。语料是合成的：
-换成真实的莎士比亚全集，只要把命令行里的语料换成莎士比亚的文本即可，
-其余步骤（θ / τ 实验、对拍）完全一样。
+`PLAYWRIGHT_MODULE` 可指定 Playwright 模块路径。八张图片均由结果页重新截取。

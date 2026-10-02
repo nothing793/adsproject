@@ -1,38 +1,16 @@
-/* pr1 Part 1 + Part 2：统计 + 建索引程序（原 tokenize.c / tokenize_main.c 已并入本文件）。
+/* 词频统计与位置倒排索引构建。
+ * 每个输入文件对应一个文档，ID 按参数顺序从 0 分配。
+ * 第一遍统计词干的 cf、df，以 df/N > theta 确定停用词；
+ * 第二遍剔除停用词，并保留词在原文中的位置编号。
  *
- * 一个程序做三件事：
- *
- *   切词 —— 直接读原始文本（每个输入文件 = 一篇文档，doc_id 按命令行顺序 0,1,2...），
- *           按 isalnum 连续段切词、转小写，pos 是词在文档内的出现序号（从 0 起）。
- *           本层**不做词干化**（理由见下面"切词口径"那段）。
- *           原来这一步是独立的 ./tokenize 程序 + file.txt 中间产物，现已并入这里：
- *           少一个可执行文件、少一次落盘，也不会再出现"改了语料忘了重跑 ./tokenize"的陈旧输入。
- *
- *   Part 1（词频统计 + 停用词识别）：
- *     pass 1：把整份语料插进内存倒排索引（顺手得到 cf / df）
- *             逐词条算 df / N，> θ 的判为停用词（noisy words），落盘 stoplist.txt。
- *     θ 的来源：编译期宏 STOPWORD_THETA（默认 0.5，可用 -DSTOPWORD_THETA=0.4 覆盖），
- *              运行时还可以用 --theta=0.4 覆盖宏。
- *
- *   Part 2（带词干化的倒排索引，不含停用词）：
- *     pass 2：把语料再读一遍，跳过停用词，重建索引，写 index.bin。
- *
- * 为什么要扫两遍：df 是"整份语料"的统计量，N 只有扫完才知道；而题面明写索引里
- * 不能包含 Part 1 认定的停用词，所以必须先统计完再建索引。两遍都用同一个
- * tokenize_document() / index_add_position() 入口，因此统计口径与建索引口径不可能不一致。
- * （代价：读语料两遍；原始文本比三元组流小，所以比原来"写一遍 file.txt 再读两遍"更省 I/O。）
- *
- * 用法：
- *   ./index_gen macbeth.txt hamlet.txt            # 每部剧一个文件，θ = STOPWORD_THETA，写 index.bin
- *   ./index_gen --theta=0.4 macbeth.txt          # 换阈值
- *   ./index_gen --count-only macbeth.txt         # 只做 Part 1：打印词频报告 + 写 stoplist.txt
- *   ./index_gen --dump-tokens=file.txt macbeth.txt    # 顺便把三元组写出来（测试对拍用）
- *   ./index_gen -                                # 从 stdin 读一篇文档（doc_id = 0）
- *
- * 编译：gcc -std=c99 -Wall -Wextra -o index_gen index_gen.c stem.c -lm
- *       （索引模块在 index.h 里，本文件 #include 它即可，没有单独的 index_io.c）
+ * --count-only：输出统计报告与 stoplist.txt，不生成 index.bin。
+ * --dump-tokens=<path>：保存词干化前的 (word, doc_id, pos) 供独立校验。
+ * --theta=<value>：设置 [0,1] 范围内的停用词阈值，默认 0.5。
+ * 输入参数 - 表示标准输入；使用临时文件支持两遍扫描。
+ * 编译：gcc -std=c99 -O2 -Wall -Wextra index_gen.c stem.c -lm -o index_gen
  */
 #include <ctype.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -85,7 +63,7 @@ static int cmp_str(const void *a, const void *b)
  *      pos（短语查询的连续性验证依赖这个编号连续）；
  *   5. 超过 TOKEN_MAX-1 字节的超长 isalnum 段按 TOKEN_MAX-1 截断，不报错也不跳过。
  *
- * ⚠ 这一层绝不做词干化。词干化全流程只允许发生一次：建索引时 stemword() 一次、
+ * 切词层保留原词形。词干化分别执行一次：建索引时 stemword() 一次、
  *    查询时 stemword() 一次。如果切词时就把词干写进中间产物，后面会再切一次，
  *    而 Porter 不幂等 —— 实测 604 个词里有 11 个二次切会变
  *    （because -> becaus -> becau、release -> releas -> relea、license -> licens -> licen），
@@ -391,7 +369,7 @@ static int store_word(inverted_index *index, const char *word, int doc_id, int p
     size_t len = strlen(word);
     if (len > maxword - 1)
     {
-        len = maxword - 1;   /* 双保险：切词层已按 TOKEN_MAX-1 截断 */
+        len = maxword - 1;   /* 切词层已按 TOKEN_MAX-1 截断 */
     }
     memcpy(stem, word, len);
     stem[len] = '\0';
@@ -404,7 +382,9 @@ static int store_word(inverted_index *index, const char *word, int doc_id, int p
     }
     if (index_add_position(index, stem, doc_id, pos) != 1)
     {
-        (*dropped)++;   /* 同一 (词干, doc_id, pos) 重复或内存不足 */
+        (*dropped)++;
+        fprintf(stderr, "Error storing token at doc_id=%d, pos=%d\n", doc_id, pos);
+        return -1;
     }
     return 0;
 }
@@ -552,7 +532,7 @@ int main(int argc, char *argv[])
         {
             char *end = NULL;
             theta = strtod(argv[i] + 8, &end);
-            if (!end || *end != '\0' || theta < 0.0 || theta > 1.0)
+            if (!end || end == argv[i] + 8 || *end != '\0' || !isfinite(theta) || theta < 0.0 || theta > 1.0)
             {
                 fprintf(stderr, "invalid --theta value: %s\n", argv[i] + 8);
                 usage(argv[0]);

@@ -1,6 +1,0 @@
-# query 1: et tu brute
-Found: et  (df=9/42 = 0.214, tf=36)
-Found: tu  (df=3/42 = 0.071, tf=7)
-Found: brute  (df=2/42 = 0.048, tf=2)
-Phrase [et tu brute]: 1 match(es) in 1 document(s)
-Doc ID: 30, Positions: 10014

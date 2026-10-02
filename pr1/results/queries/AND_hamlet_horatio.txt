@@ -1,5 +1,0 @@
-# query 1: hamlet horatio
-Found: hamlet  (df=1/42 = 0.024, tf=470)
-Found: horatio  (df=1/42 = 0.024, tf=158)
-AND [hamlet horatio]: 1 document(s)
-Doc ID: 29

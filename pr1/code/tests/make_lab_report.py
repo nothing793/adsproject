@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
-"""Build report material and browser evidence pages from actual JSON/raw logs.
-
-Screenshots are captured separately from these pages; this script never fabricates
-a terminal screenshot. Tables retain measured/estimated/logical-document labels.
-"""
+"""Generate the report and result pages from recorded measurements and outputs."""
 import csv
 import difflib
 import html
@@ -33,7 +29,7 @@ def htable(headers,rows):
 
 
 def pre(label,content):
-    return '<h3>'+html.escape(label)+'</h3><pre>'+html.escape(content)+'</pre>'
+    return '<section><h3>'+html.escape(label)+'</h3><pre>'+html.escape(content)+'</pre></section>'
 
 
 def page(number,title,body):
@@ -44,14 +40,14 @@ def page(number,title,body):
     .warn{background:#fff4dc;border-left:5px solid #a87616;padding:14px 18px;margin:18px 0}
     pre{background:#152534;color:#e9f1f7;border-radius:6px;padding:18px;font:16px/1.5 Consolas,"Microsoft YaHei",monospace;white-space:pre-wrap;overflow-wrap:anywhere}
     table{width:100%;border-collapse:collapse;font-size:17px;margin:20px 0}th,td{text-align:left;border-bottom:1px solid #d9e0e5;padding:9px 12px}th{background:#eaf0f5}
-    a{color:#225d94}.footer{font-size:14px;color:#586777;margin-top:24px}.two{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+    a{color:#225d94}.two{display:grid;grid-template-columns:1fr 1fr;gap:24px}section{min-width:0}
     '''
     PAGES.mkdir(parents=True,exist_ok=True)
     path=PAGES/f'{number:02d}.html'
     path.write_text('<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>'+html.escape(title)+
         '</title><style>'+css+'</style><main><div class="tag">ADS PR1 · 实验记录 '+f'{number:02d}'+
         '</div><h1>'+html.escape(title)+'</h1>'+body+
-        '<div class="footer">真实测试日志展示页 · 截图由浏览器实拍 · 非终端原屏截取。原始数据与命令见 results/logs/*.run.json、*.txt。</div></main></html>',encoding='utf-8')
+        '</main></html>',encoding='utf-8')
     return path
 
 
@@ -59,6 +55,7 @@ def main():
     s=json.loads(read(RESULTS/'shakespeare_summary.json'))
     b=json.loads(read(RESULTS/'bonus_summary.json'))
     before=json.loads(read(EVIDENCE/'before_fix/shakespeare_summary.json'))
+    review=json.loads(read(RESULTS/'review_after.json'))
     baseline=RESULTS/'shakespeare/theta_0.5'
     docs=list(csv.DictReader((ROOT/'data/shakespeare/documents.csv').open(encoding='utf-8-sig')))
     theta_rows=[[r['theta'],r['stop_words'],r['indexed_stems'],r['positions'],f'{100*r["retained_fraction"]:.2f}%',
@@ -103,12 +100,13 @@ def main():
         pre('θ=0.5 完整建索引原始 stderr',read(RESULTS/'logs/initial_full_build.stderr.txt'))+
         pre('词频最高的词干（完整表见 word_statistics.csv）','\n'.join(top))+
         '<div class="note">停用词判据：df/N &gt; θ；N=42。θ=0.5 删除 1,780 个词干，保留 131,136 个位置。查询位置从 0 开始，且仍按完整原文计数。</div>'))
-    pages.append(page(3,'独立对拍与修复后测试结果',
+    pages.append(page(3,'索引正确性对照检验',
         '<p>Python 重新切词、统计 df/cf、推导 stoplist、解析二进制索引，再逐词逐文档逐位置与 C 输出比较。词干算法复用原 C stemmer，因此不属于词干算法的独立验证。</p>'+
         pre('实际复测控制台（节选）','\n'.join(read(RESULTS/'extended_console.txt').splitlines()[:11]+read(RESULTS/'extended_console.txt').splitlines()[-18:]))+
+        pre('补充回归控制台（节选）','\n'.join(read(RESULTS/'review_console.txt').splitlines()[-7:]))+
         htable(['一致性检查','实测结果'],[['初次 vs 重复建索引 SHA-256',s['index_sha256']],['load → save','逐字节相同'],['损坏索引','截断/版本错误/垃圾/尾部字节/不存在文档引用均拒绝']])+
-        '<div class="note">最终 '+str(s['passed'])+' 项检查通过，'+str(s['failed'])+' 项失败。所有五组 θ 的词条集、文档表和位置列表均完全匹配。</div>'))
-    pages.append(page(4,'发现问题 → 最小复现 → 修复验证',
+        '<div class="note">全集 '+str(s['passed'])+' 项检查与补充 '+str(review['passed'])+' 项回归通过。五组 θ 的词条集、文档表和位置列表均匹配，80 组随机 AND／短语查询与枚举结果一致。</div>'))
+    pages.append(page(4,'短语查询缺陷及修复对照',
         '<p>原程序按 tf 排序短语词数组，随后仍用 start+i 验证位置，改变了短语含义。修复：保持词序，仅选择 anchor 下标，起点 = anchor 位置 − anchor 下标。</p>'+
         '<div class="two">'+pre('修复前：真实莎士比亚短语',read(EVIDENCE/'before_fix/PHRASE_et_tu_brute.txt'))+
         pre('修复后：同一索引、同一查询',read(RESULTS/'queries/PHRASE_et_tu_brute.txt'))+'</div>'+
@@ -137,7 +135,7 @@ def main():
             ['v1 词典固定元数据 18 B × 4 亿','7.2 GB，尚未计词干字符串','由格式推导'],
             ['ftell/fseek 使用 32-bit long',f'LONG_MAX = {types["long_max"]}','本机结构限制'],
             ['固定哈希桶平均装填 V/hashsize',f'{estimate["c_hash_average_chain"]:.2f} 词/桶','均匀散列情形的规模估算']])+
-        '<div class="note">答案：当前 C 实现不能直接支持题目完整 Bonus 规模。50 万 doc_id 能表示；限制来自一次性内存驻留、链表插入、逐词磁盘 seek、命令行接口及 Windows 文件偏移。</div>'+
+        '<div class="note">当前 C 实现不能直接支持题目完整 Bonus 规模。50 万 doc_id 能表示；限制来自一次性内存驻留、链表插入、逐词磁盘 seek、命令行接口及 Windows 文件偏移。</div>'+
         '<p>扩展路线：清单/目录流式输入 → 按内存预算分块 → 外部归并统计全局 df → 剔除停用词 → 64-bit 文件偏移 + 磁盘词典 → 按需读取 postings。百万词外存原型是部分验证，4 亿词仍需专门硬件与实测。</p>'))
     gallery='<h2>截图步骤索引</h2>'+''.join('<p><a href="pages/'+p.name+'">'+p.stem+' · '+
         html.escape(title)+'</a> · <a href="screenshots/'+p.stem+'.png">PNG 截图</a></p>' for p,title in zip(pages,[
@@ -155,314 +153,202 @@ def main():
         bonus_caveat='500k logical doc IDs, NOT physical files; 1m distinct terms measured, 400m only estimated')
     (EVIDENCE/'provenance.json').write_text(json.dumps(provenance,ensure_ascii=False,indent=2),encoding='utf-8')
     queryrows=[[r['query'],r['kind'],r['documents'],r.get('positions','—')] for r in s['queries']]
-    report=f'''# ADS PR1：莎士比亚全集测试、Bonus 与实验过程记录
+    old_review=json.loads(read(RESULTS/'review_before.json'))
+    qrows=[[r['query'],r['kind'],r['documents'],r.get('positions','—')] for r in s['queries']]
+    corpus=s['corpus']
+    report=f'''# Roll Your Own Mini Search Engine 实验报告
 
-本文件由真实测试 JSON / 控制台日志生成，生成时间：{now}（北京时间）。这份素材补充已有代码与历史合成语料报告，可据此编写实验报告的测试、分析和 Bonus 章节。
+## Chapter 1 问题描述
 
-## 1. 数据来源与预处理记录
+### 1.1 实验目标
 
-- 当前作业仓库：<https://github.com/nothing793/adsproject>，main 基线 commit `{s['corpus']['source_commit']}`。与最初参考仓库 commit `{s['corpus']['original_reference_commit']}` 的五个主源码在归一化换行后完全一致，已有全集构建数据适用。核验见 `evidence/repository_baseline.json`。
-- 题目指定网站：<https://shakespeare.mit.edu/>；使用该网站公开 Git 镜像 <https://github.com/TheMITTech/shakespeare>，commit `{s['corpus']['mirror_commit']}`，完整 HTML 保存在 `data/shakespeare/html/`。
-- 以网站目录为全集范围：37 部戏剧 + 5 个诗歌集合，共 42 篇文档；154 首十四行诗合并为一篇。42 是网站条目数，不是戏剧部数。
-- 从戏剧首个 `<h3>` 开始取可见文本；诗歌取正文可见文本。去掉 HTML 标签、导航与广告，保留场次标题、角色名和舞台说明。
-- 预处理第一次在 `elegy.html` 得到空正文；原因是原 HTML 的 `</TITLE` 缺少 `>`，解析器把后续内容当作 head。给该标签补 `>` 后，全部 42 篇均有正文。修复只改标签，不改文学内容。
-- `data/shakespeare/manifest.json` 记录源 URL、HTML SHA-256、文本 SHA-256、字数；`documents.csv` 给出 doc_id 与作品名称。顺序固定，doc_id 从 0 开始。
-- C tokenizer 使用 ASCII 字母/数字分词、转小写，位置从 0 开始。撇号和连字符是分隔符，停用词删除后位置仍保持原文编号。
+本实验以 MIT 网站提供的莎士比亚全集为检索语料，实现词频统计、停用词识别、词干化倒排索引和查询处理，并分析阈值变化对索引及查询结果的影响。Bonus 部分考察 500,000 个文件与 400,000,000 个不同词条件下的可扩展性。
 
-本次 token 总数 **{s['corpus']['tokens']:,}**，词干化前词形数 **{s['corpus']['raw_word_types']:,}**，词干数 **{s['corpus']['stems']:,}**。
+每个文本文件对应一个文档。程序按输入文件顺序分配从 0 开始的文档 ID，并返回单词或短语所在的文档及位置。除题目要求外，程序支持多查询单元的 AND 运算。
 
-截图：[01 数据准备](evidence/screenshots/01.png)。源文本可以自行打开抽查；如 Hamlet 为 doc_id=29，Julius Caesar 为 doc_id=30。
+### 1.2 语料及统计口径
 
-## 2. 环境、编译和原始命令
+语料取自 MIT 目录的 42 个条目，包括 37 部戏剧与 5 个诗歌集合；154 首十四行诗合并为一个文档。源网站及其公开镜像见参考文献 [1]。镜像版本为 `{corpus['mirror_commit']}`。
 
-环境：{s['environment']['platform']}；{s['environment']['gcc']}；Python 3.12。
+预处理删除 HTML 标签、网页导航和广告，保留场次标题、角色名及舞台说明。戏剧从首个 `<h3>` 标签开始提取，诗歌提取正文可见文本。`elegy.html` 中的 `</TITLE` 标签缺少结束符，对该标签补全后提取正文，文本内容未作修改。
 
-```powershell
-gcc -std=c99 -O2 -Wall -Wextra -Wpedantic code/index_gen.c code/stem.c -lm -o bin/index_gen.exe
-gcc -std=c99 -O2 -Wall -Wextra -Wpedantic code/query.c code/stem.c -lm -o bin/query.exe
-```
+采用 ASCII 字母与数字的连续段作为 token，并转换为小写。撇号及连字符作为分隔符，例如 `don't` 分为 `don` 和 `t`。一个词在文档中的位置按完整 token 序列编号，起始位置为 0；删除停用词后保留原位置编号。
 
-实际脚本还编译 `stem_list`、`roundtrip` 和 `bonus_probe`，均零告警。建索引需显式传入所有语料文件；通配符展开由测试脚本负责。每个 θ 在不同目录运行，独立保存索引和 stoplist；Windows 覆盖已有索引问题已修复并回归验证。
+全集共有 **{corpus['tokens']:,} 个 token、{corpus['raw_word_types']:,} 种原词形和 {corpus['stems']:,} 个词干**。其中，cf 表示词干的总出现次数，df 表示包含该词干的不同文档数，N 表示全部文档数。空文档也计入 N。
 
-`query` 从当前工作目录读取 `index.bin` 和 `stoplist.txt`，每次覆盖 `output.txt`。本次脚本把每次查询结果另存为 `results/queries/*.txt`。完整参数、cwd、退出码、时间、峰值 working set 在 `results/logs/*.run.json`，stdout / stderr 原文同名保存。
+原始 HTML、提取文本、文档清单及 SHA-256 校验值位于 `test_data.zip` 的 `data/shakespeare/` 目录。各文档 ID 与作品名的对应关系见 `documents.csv`。
+
+## Chapter 2 数据结构与算法
+
+### 2.1 词频统计与停用词
+
+统计与建索引采用两遍扫描。第一遍对全部词执行 Porter 词干化，累计 cf、df，并按下式确定停用词：
 
 ```text
-{read(RESULTS/'logs/initial_full_build.stderr.txt').strip()}
+df / N > θ
 ```
 
-θ=0.5：索引 **663,434 B（647.88 KiB）**，保留 **131,136** 个位置，比例 **13.71%**，两遍扫描均 **0 positions dropped**。
+默认 θ=0.5。高文档频率的词在文档间区分能力较低，因此用文档覆盖率划分 noisy words。该判据具有可重复性，但不等同于语义判断；例如 `love` 也可能因覆盖文档较多而被过滤。阈值实验用于考察索引大小与可检索内容之间的取舍。
 
-截图：[02 编译、词频与建索引](evidence/screenshots/02.png)。完整词频表：`results/word_statistics.csv`，按 cf 降序，包括每个词干的 cf、df、df/N。
+第一遍生成 `stoplist.txt` 后释放统计索引；第二遍重新读取语料，剔除停用词并写出位置倒排索引。`--count-only` 只执行统计阶段，不生成索引文件。词干化在建索引和查询时各执行一次。词干模块采用文献 [2] 的 C 实现，许可及版权声明附于 `code/LICENSE-stmr.txt`。
 
-## 3. 正确性测试方法与结果
+### 2.2 内存结构与文件格式
 
-测试参考答案不靠“查询输出看起来合理”：Python 对全部文本独立用正则分词，核对 C 的全部 956,647 条 token，然后按词干聚合 `(doc_id,pos)`，统计 cf/df，独立推导 stoplist，并按二进制格式解析 `index.bin`。对五组 θ，文档表、词条集合和全部位置列表逐项相等。词干处理复用原 C `stem_list`，因此验证范围不包含 Porter 算法本身的独立正确性。
+词典采用 1,000,007 个哈希桶，以链地址法处理冲突。每个词条保存词干、tf 和位置链表；位置节点记录 `(doc_id, pos)`，按文档 ID 与位置升序排列。文档表为升序、无重复的 ID 数组。
 
-进一步测试：同词大小写、单词位置列表、AND 文档交集、短语连续位置、停用词解释、τ 边界、空文档、尾部空文档、N=0 索引和损坏文件。重复构建与 load→save 往返均逐字节相同，θ=0.5 的 SHA-256 为：
+`index.bin` 使用小端定长整数及 LEB128 变长编码。文件由连续的头部、文档表、词典和位置段组成。
+
+| 部分 | 保存内容 |
+| --- | --- |
+| 头部（64 B） | 魔数、版本、文档数、词条数、位置总数及三段偏移 |
+| 文档表 | N 个 u32 文档 ID |
+| 词典 | u32 df、u32 tf、u64 文件绝对偏移、u16 词干长度及词干字节 |
+| 位置段 | 文档增量、文档内出现次数与位置增量，采用 LEB128 编码 |
+
+加载器检查魔数、版本、段边界、词典与文档表顺序、df/tf、累计位置数和文档引用，并在增量累加前检查整数范围。该格式未设置校验和，因此无法识别所有仍满足结构约束的内容改动。构建结果先写入临时文件，再替换目标索引；Windows 使用 `MoveFileExA`，POSIX 使用 `rename`。
+
+### 2.3 查询处理
+
+查询采用与建索引相同的分词与词干化规则。单词查询返回 df、tf 和命中位置；AND 查询对各单元的升序文档列表求交。
+
+短语查询先求候选文档交集，再选择 tf 最小词的原始下标 anchor 作为锚点。候选起点为该词的命中位置减去 anchor，并逐词验证 `start+i` 是否存在。该过程保持原短语词序，允许重复词。
+
+命令行中的多个参数表示 AND；单个参数中的多个 token 表示连续短语。`test.txt` 的普通行表示 AND，`phrase:` 行表示短语。每次查询结果写入 `output.txt`。查询最多包含 32 个单元，每个短语最多 16 个词；超出限制的输入返回错误。
+
+查询阈值 τ 满足下式时，程序保留统计信息并抑制完整结果列表：
+
+```text
+df / N > τ
+```
+
+θ 与 τ 均采用严格大于条件，相等时不触发过滤或抑制。θ 决定索引中的词条，τ 决定查询结果的展示范围。已删除停用词的位置无法由当前索引恢复，因此包含这些词的精确短语不能直接检索。
+
+### 2.4 复杂度
+
+若词干数为 V、哈希桶数为 M，均匀散列下平均链长约为 V/M。当前位置链采用从头扫描的有序插入；一个词的 tf 个位置按升序插入时，遍历次数为 `tf(tf−1)/2`，最坏时间为 O(tf²)。构建成本还包含文件读取、词干化、哈希查找与落盘。
+
+AND 文档列表求交的时间与参与列表的总长度相关。短语查询增加了位置连续性验证。当前查询程序全量加载词典与位置链，因此单次查询的成本还包含完整索引加载；该实现适用于本次语料，但存在明显的规模限制。
+
+## Chapter 3 测试与结果分析
+
+### 3.1 环境与验证方法
+
+实验日期为 2026 年 10 月 2 日。运行环境为 Windows 11、gcc 15.2.0（MinGW-w64）和 Python 3.12。使用 `-std=c99 -O2 -Wall -Wextra -Wpedantic` 编译，四个全集测试程序均无编译告警。
+
+Python 使用独立的正则分词，逐项核对 C 输出的全部 {corpus['tokens']:,} 条原始 token；随后按词干聚合 `(doc_id,pos)`，推导 cf、df 和停用词集合，并独立解析二进制索引。对五组 θ，文档表、词条集合及全部位置列表均与参考结果相等。词干处理复用了原 C 实现，该对照不构成 Porter 算法本身的独立验证。
+
+全集测试共 **{s['passed']} 项通过、{s['failed']} 项失败**。重复构建与 load→save 往返的索引逐字节一致。θ=0.5 的 SHA-256 为：
 
 ```text
 {s['index_sha256']}
 ```
 
-修复前测试为 **{before['passed']} PASS / {before['failed']} FAIL**；修复后为 **{s['passed']} PASS / {s['failed']} FAIL**。前后检查数量不同，因为修复时增加了专门的回归与文档引用校验测试；不能把新增检查误写为“同一套测试增加了通过项”。
+补充回归共 **{review['passed']} 项通过、{review['failed']} 项失败**，覆盖标点归一化、阈值合法性、查询长度、异常索引及分配失败。另以固定随机种子 793 生成 13 篇文档，对 80 组 AND／短语查询与独立枚举结果进行比较，全部一致。分配失败测试针对本次 64 位 Windows ABI，通过链接器包装 malloc，验证位置节点分配失败时终止构建。
 
-{table(['查询','方式','命中文档数','位置/短语起点数'],queryrows)}
+### 3.2 查询结果
 
-截图：[03 对拍与最终结果](evidence/screenshots/03.png)。原始完整控制台：`results/extended_console.txt`；逐项判断在 `results/shakespeare_summary.json`。
+{table(['查询','方式','命中文档数','位置／短语起点数'],qrows)}
+`et tu brute` 命中 Julius Caesar（doc_id=30），起点为 10014。`to be or not to be` 在原文中出现一次，但其全部词都被 θ=0.5 的停用词规则删除，故过滤后的索引返回零匹配。该结果体现了停用词规则对短语检索的影响。
 
-## 4. 真实问题定位与修复痕迹
+### 3.3 缺陷定位与修正
 
-### 4.1 短语重排导致错查
+初次全集测试为 67 项通过、2 项失败。短语词数组按 tf 排序后，原程序仍按 `start+i` 检查位置，导致查询顺序改变。将排序改为保留词序的锚点选择后，真实短语及最小反例 `alpha beta alpha alpha gamma` 的起点均正确。
 
-原 `run_phrase_query()` 把词数组按 tf 排序，然后继续用 `start+i` 检查相邻位置。这使数组顺序变成频率顺序，原短语顺序丢失。
+加载器原先要求最大 posting 文档 ID 等于文档表最后一个 ID，因而拒绝尾部空文档。现改为检查每个 posting 引用是否属于文档表，允许文档没有索引词。此外，普通文件查询改按 AND 处理，Windows 连续重建改用可替换已有目标的文件接口。
 
-- 真实数据：`et tu brute` 修复前返回 0，独立枚举预期为 `(30,10014)`。
-- 最小输入：`alpha beta alpha alpha gamma`；`alpha` 比 `beta` 多，原排序变成 `beta alpha`，查询 `alpha beta` 错误返回起点 1，预期起点为 0。
-- 修复：保留词序，以最小 tf 的词下标 `anchor` 作锚点；候选起点为 `positions[anchor][a]-anchor`，仍按原下标 i 验证 `start+i`。
-- 复测：`et tu brute` 返回 doc 30 / pos 10014，`alpha beta` 返回 doc 0 / pos 0；反向、重复词、不命中短语回归均通过。
+在后续 {review['passed']} 项补充回归中，修正前结果为 {old_review['passed']} 项通过、{old_review['failed']} 项失败，修正后全部通过。主要修改为：统一语料与查询分词；拒绝空值、NaN 及超范围阈值；拒绝过长查询行；补全单词结果的文档数组；验证词典及文档表的严格顺序；在增量累加前检查整数溢出；使用扩展整数计算 INT_MAX 位置的首个增量；位置节点分配失败时终止构建，防止成功保存不完整索引。
 
-### 4.2 合法空文档被判为坏索引
+两阶段检查数量不同，分别对应不同的测试集合。修复记录、源码差异及修正前结果保存在压缩包的 `evidence/` 和 `results/review_*.json` 中。
 
-原加载器要求最大 posting 的 doc_id 等于文档表最后一个 ID。最后一篇文档为空或全是停用词时，不会有 posting，这个等式不成立。50 万个空逻辑文档的合法索引也因此被拒绝。
-
-修复为逐组二分验证 posting 的 doc_id 确实属于文档表；允许文档没有索引词。尾部空文档、50 万空逻辑文档加载通过，posting 引用不存在的文档仍被拒绝。索引文件格式保持 v1。
-
-修复前源码和失败结果在 `evidence/before_fix/`；精确差异在 `evidence/source_changes.patch`。截图：[04 问题复现和修复](evidence/screenshots/04.png)。
-
-### 4.3 文件输入和 Windows 重建索引
-
-原 `test.txt` 多词行说明是 AND，实际却把整行当一个短语单元。改为逐词构成查询单元；只有 `phrase:` 行作为短语。用 `alpha gamma`（文档中都有但不连续）、`phrase: alpha beta` 和单词行回归，均通过。`code/test.txt` 已补上真实查询样例。
-
-原 Windows CRT `rename()` 无法替换旧 `index.bin`，第二次构建失败。Windows 改用 `MoveFileExA(REPLACE_EXISTING | WRITE_THROUGH)`，POSIX 继续 `rename()`；同一目录连续重建后索引 SHA-256 相同。Linux 分支保持原实现，本次环境只实测 Windows。
-
-原 `tests/sweep.py` 未给 index_gen 传语料文件，且将位置行数当文档数；该入口现改为调用独立校验后的全集测试，再按去重文档数打印 θ/τ 表。原脚本保存在 `evidence/before_fix/sweep.py` 供过程对照。
-
-## 5. θ 与 τ 实验及分析
-
-θ：建索引时剔除 `df/N > θ` 的词。τ：查询时对 `df/N > τ` 的已有索引词抑制完整结果列表。两者相等时均不触发删除/抑制。
+### 3.4 停用词阈值 θ
 
 {table(th,theta_rows)}
+θ 增大时，停用词减少，索引词条、位置数与文件体积增加。默认 θ=0.5 删除 1,780 个词干，保留 13,206 个词干与 131,136 个位置，索引大小为 663,434 B。被删除词干约占词表的 11.88%，覆盖 86.29% 的出现位置，说明常见词集中占据了较多文本位置。
 
-θ 增大时，停用词减少，索引词条、保留位置和索引体积都增大。以默认 θ=0.5 为例，1,780 个词干仅占词表约 11.88%，却覆盖 86.29% 的出现位置；说明少数常见词占据大量文本。但 df/N 高并不一定语义无用，`love` 等内容词也可能被剔除，所以这种“noisy”划分是操作性判据，有精度/召回取舍。
+### 3.5 查询阈值 τ
 
 {table(tah,taus)}
+表中数值为去重后的文档数。`caesar`、`antony` 和 `hamlet` 分别命中 19、6、1 篇文档；对应位置数为 602、513、470。τ=0.1 时前两者被抑制，τ=0.2 时 `antony` 恢复展示，τ=0.5 时三者均展示。三个 `τ=df/N` 边界查询均通过。
 
-查询词使用原词形 `caesar`、`antony`、`hamlet`，不会对已词干化结果再词干化。`antony` 对应 `antoni`。表中数值为去重 doc_id 后展示的文档数：caesar 是 19 篇 / 602 个位置，不能写成 602 篇。
+性能数据为本机单次墙钟测量，受后台任务影响。θ=0.5 初次构建额外输出 token dump，其他 θ 未输出；因此各档耗时不完全对应相同的 I/O 工作量。内存记录为以 10 ms 间隔读取的 Windows 峰值 working set，不等同于严格 RSS 上限。
 
-τ=0.1 时 caesar 和 antony 被抑制，hamlet 仍展示；τ=0.2 时 antony 恢复；τ=0.5 时三者均展示。抑制不代表原文没有匹配；程序仍打印 df/tf。三个 `τ=df/N` 的边界查询均允许展示。
+## Chapter 4 Bonus：规模实验与可扩展性
 
-`to be or not to be` 在原文中存在，但每个词都在 θ=0.5 stoplist 中，位置索引不再含这些词，所以默认短语查询返回 0。报告要把“原文出现次数”和“过滤后可检索次数”分开，不能将此结果当作语料缺失。
+### 4.1 原 C 后端
 
-截图：[05 阈值实验](evidence/screenshots/05.png)。CSV：`theta_results.csv`、`tau_results.csv`。
-
-测量限制：建索引时间是单次墙钟时间，部分实验运行时有其他测试活动；θ=0.5 初次构建额外写 token dump，其他 θ 没有。峰值内存为 Windows `PeakWorkingSetSize`（working set），10 ms 轮询读取；不是严格 RSS 上限或纯算法内存。性能数据只用于本机量级观察，不据小幅耗时差下结论。
-
-## 6. Bonus：原 C 实现实测
-
-题面是 **400,000,000 distinct words（不同词）**，不是 4 亿次重复出现。用重复词凑 4 亿 token 不能验证词典规模。
-
-### 6.1 文档数与词典规模
+通过 `bonus_probe.c` 直接调用现有索引模块，生成已归一化的词干及逻辑文档 ID。词典规模测试中，每个不同词出现一次。
 
 {table(vh,vrows)}
+最大档为 500,000 个逻辑文档、1,000,000 个不同词。索引保存后由查询程序重新加载，各档首词与末词的位置均符合预期；最大档末词命中 `(499999,1)`。该测试未执行实体文件枚举、原文分词与停用词统计。另构建 500,000 个空逻辑文档的索引，大小为 2,000,064 B，加载成功。
 
-`bonus_probe.c` 直接调用现有 `index.h`；生成确定性已归一词干，每词一个位置，构建、保存，再由原 query 重启加载查询。最大档达到 **500,000 逻辑文档 / 1,000,000 不同词**，查询校验通过。它未经过文件枚举、原文 tokenization 或停用词统计，不能称为“50 万实体文件端到端测试”。
+{table(['同一词的 tf','插入 CPU s','相邻档时间倍率'],crows)}
+高频词的位置插入耗时随 tf 增长呈明显的二次方趋势，与从头扫描链表的复杂度一致。加载器复用该插入接口，也存在同类退化。
 
-另验证 500,000 个空逻辑 doc_id 的索引大小为 2,000,064 B，修复后可加载；这证明 doc_id 表达范围足够，不证明磁盘文件处理能力。
+### 4.2 外存原型
 
-### 6.2 高频位置链退化
-
-{table(['同一词的 tf','插入 CPU s','相邻档倍率'],crows)}
-
-位置链表每次从头寻找插入点；按升序插入一个词的 n 个位置，遍历数为 `0+1+…+(n−1)=n(n−1)/2`，时间为 O(n²)。本机多数倍增档接近 4 倍耗时，最大档受系统负载影响更大；`index_load` 复用同一插入入口，也有该退化。
-
-### 6.3 CLI 与文件偏移限制
-
-将 500,000 个文件名构成参数列表，字符串长度 {b['cli']['command_chars']:,} 字符；真实创建进程时被 Windows 拒绝，WinError {b['cli']['winerror']}。这是参数接口限制测试，失败发生在 C 程序启动之前，因此不需要创建实体文件。
-
-本机 `sizeof(long)=4`，`LONG_MAX=2,147,483,647`。索引虽在文件中存 u64 偏移，加载器却调用 `ftell/fseek` 并转成 long，不能可靠处理超过约 2 GiB 的索引。该结论来自类型探针和源代码，不是创建并测试了一个 2 GiB 文件。
-
-截图：[06 原 C 后端压力测试](evidence/screenshots/06.png)。完整 CSV 和 JSON：`bonus_results.csv`、`bonus_summary.json`。
-
-## 7. Bonus：外存原型补充验证
-
-新增独立 `bonus_disk_demo.py`，用磁盘 SQLite B-tree 保存词典和位置表。页缓存预算 8 MiB，每批最多 2,000 个位置；保存后关闭再打开，核验词条数、不同 doc_id 数、integrity_check、单词、连续短语和阈值抑制。
+独立的 `bonus_disk_demo.py` 使用 SQLite B-tree 保存词典和位置表，页缓存预算为 8 MiB，每批最多 2,000 个位置。保存后关闭并重新打开数据库，验证词条数量、文档数量、数据库一致性、单词查询、连续短语及阈值抑制。
 
 {table(dh,drows)}
+最大档中，单词命中 `(499999,1)`，短语命中 `(499999,0)`。该原型与原 C 文件格式独立，不兼容 `index.bin`；测试数据采用每词出现一次的合成分布。固定页缓存控制了部分工作内存，但不意味着整个进程的内存严格恒定。
 
-最大档查询最后一篇文档：单词命中 `(499999,1)`，两词短语命中 `(499999,0)`。测试通过。
+### 4.3 四亿不同词的资源估算
 
-这只是“把词典和 postings 存盘”的可运行原型，**不是原 C 程序已实现 SPIMI，也不兼容原 index.bin**。它使用已归一合成词干、每词出现一次的分布；页缓存固定不代表整个进程内存严格恒定。上述实测支持有限工作内存方向，但未验证 4 亿不同词，也未验证 50 万实体文件或一般高频语料。大型数据库在工作目录 `work/`，交付保留代码、测量和原始日志，避免把临时压力数据当真实语料。
-
-截图：[07 外存原型](evidence/screenshots/07.png)。
-
-## 8. Bonus：4 亿不同词的条件估算与结论
-
-本机 `sizeof(Posting)={types['posting']}`、`sizeof(Position)={types['position']}`。假设每个不同词至少一个位置、词干字符串平均含结束符 16 B，则仅 C 索引载荷约为：
+本机测得 `sizeof(Posting)=32 B`、`sizeof(Position)=16 B`、`sizeof(long)=4 B`。假设每个不同词至少有一个位置，且词干字符串连同结束符平均占 16 B，则 C 索引载荷估算为：
 
 ```text
-8,000,072 + 400,000,000 × (32 + 16 + 16)
-= 25,608,000,072 B
-≈ 25.608 GB ≈ 23.85 GiB
+8,000,072 + 500,000 × 4 + 400,000,000 × (32 + 16 + 16)
+= 25,610,000,072 B ≈ 25.610 GB ≈ 23.85 GiB
 ```
 
-这是**条件估算**，不含 malloc 元数据、碎片、词频统计数组、排序数组和重复词位置，实际需求更大。原 v1 词典每条固定元数据为 18 B，4 亿条仅元数据就需 **7.2 GB**，尚未计词干和 postings；这已超出本机 long 文件偏移范围。固定 1,000,007 个哈希桶下，V/hashsize≈400，均匀散列时每桶平均约 400 个词，链式查找常数明显增大。
+该估算计入文档表的最低载荷，不含其预留容量、分配器开销、碎片、统计数组、排序数组及重复位置。现有词典每条固定元数据占 18 B，四亿条仅元数据即占 7.2 GB，尚未计入字符串与位置段。固定哈希桶下平均链长约为 400，查询常数也将显著增大。
 
-因此回答题面“Will your program still work?”：**当前 C 内存后端不能直接支持完整 Bonus 规模。50 万 doc_id 可表示，但内存、位置链表构建、全量加载、命令行和 Windows 文件偏移限制都必须解决。**
+当前加载器使用 `ftell/fseek` 与 long 偏移，本机 `LONG_MAX=2,147,483,647`，无法可靠处理超过约 2 GiB 的索引。命令行接口也存在限制：将 500,000 个文件名作为参数时，实际进程创建返回 WinError 206，程序尚未开始读取文件。该测试未创建实体文件。
 
-可扩展路线：
+因此，**当前 C 实现不能直接支持题目给出的完整 Bonus 规模**。文档 ID 的表示范围足够，但内存驻留、链表插入、全量加载、命令行长度及文件偏移均构成约束。
 
-1. 改为目录或文件清单输入，流式枚举，避免巨型 argv。
-2. 统计阶段也要分块：先输出词干/文档统计块，外部归并得到全局 df，之后再确定停用词。只对 pass 2 分块不够。
-3. 建索引用 SPIMI/BSBI 分块排序和多路外部归并；保留原文位置，生成 delta + varint postings。
-4. 磁盘词典使用 B-tree 或分块 SSTable；64-bit 文件偏移；查询按需读取目标词的 postings，避免一次加载完整词典与位置链。
-5. 高频查询可采用按需迭代、跳跃表、分页；如引入 top-K/BM25，应明确它改变了题目“返回全部 ID”的接口语义，不能直接用 top-K 代替完整正确性测试。
-6. 更大规模验证需继续按不同词数量递增，记录峰值内存、磁盘容量、归并次数、索引正确性和查询延迟。
+### 4.4 改进方向
 
-**已实测**：全集 42 文档，C 后端百万不同词 / 50 万逻辑文档，外存原型百万不同词，以及 CLI 失败与类型尺寸。**未实测**：4 亿不同词、50 万实体文件端到端输入。报告不可写成两者已全部跑过。
+输入接口可改为目录或文件清单，逐个读取文档。统计阶段应按内存预算分块，再外部归并得到全局 df；确定停用词后，再对保留词构建分块位置索引。SPIMI／BSBI 分块与多路归并可减少一次性内存需求 [3]。
 
-截图：[08 规模估算](evidence/screenshots/08.png)。
+词典可采用磁盘 B-tree 或分块有序文件，文件访问改为 64 位偏移，查询时只读取目标词的位置列表。高频词的位置构建可采用尾指针或顺序缓冲，避免重复遍历。SQLite 原型验证了将词典与位置存盘的可行性，但未验证四亿不同词、五十万实体文件或一般高频语料；完整规模仍需进一步实验。
 
-## 9. 复现与文件索引
+## Chapter 5 复现与提交文件
 
-已附语料，无需重新下载。Windows 安装 gcc 和 Python 3 后，从本目录运行：
+提交内容为 `code/`、本报告及 `test_data.zip`。将压缩包解压到本报告所在目录后，会得到 `data/`、`results/` 和 `evidence/`。压缩包含语料、结果表、原始日志、源码修复记录及八张实验截图，不含可执行文件、数据库和临时压力索引。
+
+从 `pr1` 目录编译并查询：
 
 ```powershell
-.\\run_lab.ps1 -PythonExe "你的Python路径\\python.exe"
-# 复用已有索引，只重编译/对拍/查询；初始构建时间保留为首次实测值
-.\\run_lab.ps1 -PythonExe "你的Python路径\\python.exe" -ReuseIndexes
-```
-
-完整重新构建约需数分钟；可复用模式不会再次运行五组全集建索引，仍重新验证索引内容和查询。脚本不依赖第三方 Python 包。`run_bonus.py` 外存数据写在工作目录，不递归删除任何目录。
-
-直接复现查询：
-
-```powershell
-Set-Location .\\results\\shakespeare\\theta_0.5
-& ..\\..\\..\\bin\\query.exe 'et tu brute'
-& ..\\..\\..\\bin\\query.exe antonio bassanio
-& ..\\..\\..\\bin\\query.exe --tau=0.1 caesar
-Get-Content .\\output.txt
-```
-
-优先阅读本文件；浏览器记录入口 `evidence/index.html`；PNG 截图 `evidence/screenshots/01.png` 至 `08.png`。PNG 是真实浏览器对原始结果展示页的截图，**不是原生终端窗口截取**。生成展示页的脚本也已提供，可核对是否忠实于日志。
-
-写报告时建议采用“实验目的 → 数据/环境 → 方法和命令 → 实测表 → 原因分析 → 局限 → Bonus 结论”的顺序，引用对应图片、原始日志和源代码差异。`documentation.md` 是整合后的完整报告；此前的合成语料报告保存在 `evidence/before_fix/documentation.md`，不能与本次真实全集数字混用。
-'''
-    (ROOT/'实验记录与报告素材.md').write_text(report,encoding='utf-8')
-    design='''# PR1 实验报告：Roll Your Own Mini Search Engine
-
-## Chapter 1：问题描述与目标
-
-对题目指定 MIT 莎士比亚全集构建迷你搜索引擎。要求：（1）统计词频，划分 interesting / noisy words；（2）建立去除停用词、带词干化的位置倒排索引；（3）支持单词、AND 和短语，返回文档 ID；（4）测试查询阈值；（5）讨论 50 万文件 / 4 亿不同词的可行性。
-
-输入为一组文本文件，每个文件一篇文档，doc_id 按固定清单顺序分配；输出包括词频/停用词记录、index.bin 和查询结果。真实语料按网站目录取 42 个条目，十四行诗 154 首合并。字段 df 是不同文档数，cf/tf 是出现次数，不能混用。
-
-## Chapter 2：数据结构与算法
-
-### 2.1 预处理与两遍扫描
-
-先确定性地从 HTML 提取可见正文，再以 ASCII 字母/数字连续段分词、转小写。位置是完整文本中的 0 起始 token 编号。切词层不做词干化；每个原词在扫描/查询时通过 Porter stemword 一次变成词干，避免二次词干化改变 key。词干模块来源见 stem.c 注释。
-
-Pass 1 为全部词建立位置索引，统计 cf/df。停用词判据为 df/N > θ，默认 θ=0.5；保存 stoplist 后释放第一遍索引。Pass 2 重新扫描全部文档，跳过 stoplist，保留原文位置，写出最终索引。--count-only 保留独立的词频统计入口。统计和建索引共用切词/词干口径。
-
-高 df/N 表示在该文档粒度下区分能力弱，因此作为 noisy 的可操作定义；它不是语义上的绝对判断，部分内容词也会被删除。θ 实验用于展示空间与可检索范围的取舍。
-
-### 2.2 内存与文件索引
-
-内存使用固定 1,000,007 个哈希桶，链地址法按词干查 Posting；每个 Posting 保存词干、tf 和按 (doc_id,pos) 升序的位置链。DocTable 是升序去重文档 ID 数组，允许空文档，df/N 的 N 包含所有文档。Position 记录文档、位置和 next。
-
-index.bin v1 的 64 B 头部保存魔数、版本、N/V/位置总数和三段偏移；文档段为 u32 ID；词典段按词干排序，每条为 u32 df、u32 tf、u64 posting 偏移、u16 字符串长度和字符串；位置段采用文档/位置差分与 LEB128。整数按小端写出，不直接 dump C 结构体。加载验证段边界、tf/df、总位置数和文档引用。没有校验和，因此结构自洽的字节改动不一定能发现。
-
-写文件先写临时文件再替换；Windows 使用 MoveFileExA，POSIX 使用 rename。本次验证 Windows 重建覆盖。文件格式未改，但 Windows long 文件偏移仍限制超大索引。
-
-### 2.3 查询算法
-
-单词：归一化后查表，输出 df/tf 与全部位置。AND：各词提取升序文档列表，指针求交。短语：先求文档交集，再选 tf 最小词的原始下标 anchor；候选起点为 anchor 位置减 anchor，下标 i 的词必须位于 start+i。保持短语词序，不能按 tf 重排词数组。CLI 多个参数与 test.txt 普通多词行均为 AND；单个含空格参数或 phrase: 行为短语。
-
-τ 为查询时的硬抑制阈值：已有词 df/N > τ 时打印统计，抑制完整 ID/位置列表。相等不抑制；原文匹配不因抑制变为不存在。含已删除停用词的精确短语无法在当前索引恢复。
-
-### 2.4 复杂度与规模限制
-
-一次哈希查找的平均链长度约为 V/hashsize。当前位置插入每次从头找位置，同一词的升序 tf 次插入需要 O(tf²)，不能将整条构建流程简单称为 O(tokens)。内存至少与词典和保留位置数一起增长。查询当前加载完整索引，并逐词 seek 到 postings，因此短查询也承担全量加载成本；具体实测见 Chapter 3。
-
-### 2.5 验证原则
-
-独立 Python 切词/聚合/二进制解析核对全部位置；词干实现共享，明确验证边界。另验证重复构建、load/save 往返、阈值边界、短语词序、空文档、文件输入与损坏拒绝。记录失败、修复前源码、最小反例和复测；将逻辑文档压力、实体文件输入、实际测量和理论估算分别说明。
-
-## Chapter 3：真实实验、过程记录与 Bonus
-
-'''
-    experiment='\n'.join(('#'+line if line.startswith('#') else line) for line in report.splitlines()[1:])
-    refs='''
-
-## 参考资料
-
-1. 题目截图：image.png，陈越，浙江大学。
-2. MIT The Complete Works of William Shakespeare：https://shakespeare.mit.edu/；公开网站镜像：https://github.com/TheMITTech/shakespeare。
-3. Martin Porter, An algorithm for suffix stripping, Program, 1980。C 实现引用：https://github.com/wooorm/stmr.c（项目 stem.c 中保留来源）。
-4. Manning, Raghavan, Schütze, Introduction to Information Retrieval，倒排索引和索引构建章节：https://nlp.stanford.edu/IR-book/。
-5. SQLite 官方文档，cache_size 与 temp_store：https://www.sqlite.org/pragma.html；用于独立 Bonus 外存原型。
-6. 当前源码基线和完整测量见 evidence/repository_baseline.json、results/*.json。4 亿词规模没有实跑，相关数字均为条件估算或格式推导。
-'''
-    (ROOT/'documentation.md').write_text(design+experiment+refs,encoding='utf-8')
-    readme=f'''# ADS PR1：迷你搜索引擎
-
-当前仓库基线：nothing793/adsproject，commit `{s['corpus']['source_commit']}`。
-
-已补充题目指定网站的全集语料、真实正确性与 θ/τ 测试、Bonus 规模实验、修复回归和 8 张过程截图。全集为 **42 文档 / 956,647 tokens / 14,986 词干**；最终 **{s['passed']} PASS / {s['failed']} FAIL**。
-
-- [完整实验报告](documentation.md)：Chapter 1 问题、Chapter 2 方法、Chapter 3 测试与 Bonus。
-- [实验记录与报告素材](实验记录与报告素材.md)：命令、结果、分析和截图引用。
-- [8 张截图的说明](evidence/截图说明.md)；[浏览器展示页索引](evidence/index.html)。PNG 是实际浏览器截图，展示页由原始日志生成。
-- [源码修改差异](evidence/source_changes.patch)：短语词序、合法空文档加载、test.txt AND 语义、Windows 索引替换。
-- [全集清单](data/shakespeare/documents.csv)、[来源与校验和](data/shakespeare/manifest.json)。
-
-## 编译与运行
-
-```powershell
-gcc -std=c99 -O2 -Wall -Wextra -Wpedantic -o code/index_gen.exe code/index_gen.c code/stem.c -lm
-gcc -std=c99 -O2 -Wall -Wextra -Wpedantic -o code/query.exe code/query.c code/stem.c -lm
+Expand-Archive -LiteralPath test_data.zip -DestinationPath . -Force
+gcc -std=c99 -O2 -Wall -Wextra -Wpedantic code/index_gen.c code/stem.c -lm -o code/index_gen.exe
+gcc -std=c99 -O2 -Wall -Wextra -Wpedantic code/query.c code/stem.c -lm -o code/query.exe
+$corpus = Get-ChildItem data/shakespeare/corpus/*.txt | Sort-Object Name
 Set-Location code
-$corpus = Get-ChildItem ../data/shakespeare/corpus/*.txt | Sort-Object Name
 ./index_gen.exe --theta=0.5 $corpus.FullName
 ./query.exe 'et tu brute'
-./query.exe antonio bassanio
-./query.exe --tau=0.1 caesar
-./query.exe # 读取已附 test.txt；普通多词行是 AND，phrase: 行为短语
 Get-Content output.txt
 ```
 
-Linux / macOS 使用同样 gcc 命令生成 index_gen / query，然后 `./index_gen corpus/*.txt`（传入正确相对路径）。输入文件顺序决定 doc_id；本次清单按文件名排序。
+完整测试入口为 `code/tests/run_lab.ps1`，或依次执行 `run_extended.py`、`review_regression.py` 与 `run_bonus.py`。Python 脚本仅使用标准库；截图重建需要 Playwright 与 Edge。
 
-## 一键复现实验
+实验图 01—08 位于 `evidence/screenshots/`，依次对应语料准备、编译与建索引、正确性检查、修复对照、阈值实验、C 后端压力实验、外存原型和资源估算。图中数据来自已保存的运行日志，图片为结果展示页的浏览器截图。
 
-Python 3 + gcc，无第三方 Python 包依赖。PowerShell：
+## 参考文献
 
-```powershell
-./run_lab.ps1 -PythonExe '你的Python路径/python.exe'
-# 已有索引时，可复用索引并重新对拍、重启查询
-./run_lab.ps1 -PythonExe '你的Python路径/python.exe' -ReuseIndexes
-```
+[1] The Complete Works of William Shakespeare. MIT. https://shakespeare.mit.edu/；网站源码镜像：https://github.com/TheMITTech/shakespeare。
 
-也可直接运行 `python code/tests/run_extended.py`、`python code/tests/run_bonus.py`、`python code/tests/make_lab_report.py`。首次全集建索引需要数分钟；原始 stdout/stderr、参数、cwd、退出码和测量保存在 results/logs。
+[2] Porter M F. An algorithm for suffix stripping. Program, 1980, 14(3): 130–137. C 实现：https://github.com/wooorm/stmr.c。
 
-`python code/tests/sweep.py` 展示最近一次校验通过的阈值表；`--rebuild` 重新构建并校验。旧合成语料测试保留作补充，不再代表真实全集结果。
+[3] Manning C D, Raghavan P, Schütze H. Introduction to Information Retrieval. Cambridge University Press, 2008. https://nlp.stanford.edu/IR-book/。
 
-## Bonus 的验证范围
-
-原 C 后端与独立外存原型均实测至 **50 万逻辑 doc_id / 100 万不同词干**。未创建 50 万实体文件，未实跑 4 亿不同词。当前 C 后端不能直接支持完整 Bonus 规模：内存词典、二次方位置插入、全量加载、巨型 argv 与 Windows long 偏移限制均需改造。独立 SQLite 原型验证固定页缓存的外存方向，不能据此宣称完整 Bonus 规模已通过。
-
-临时大型索引、数据库、exe、token dump 不纳入 Git；测量、真实语料、截图和生成脚本纳入 Git。源代码版本与初始参考仓库相等性见 evidence/repository_baseline.json。
+[4] SQLite. PRAGMA Statements：cache_size、temp_store. https://www.sqlite.org/pragma.html。
 '''
-    (ROOT/'readme.md').write_text(readme,encoding='utf-8')
-    (EVIDENCE/'截图说明.md').write_text('# 实验截图索引\n\n这些 PNG 是真实浏览器截图，页面由实际测试日志生成，并非终端原屏截图。原始命令、参数、cwd、退出码、时间和内存都能在 results/logs 中核对。\n\n'+
-        table(['编号','实验步骤','报告用途'],[[f'{i:02d}.png',name,purpose] for i,name,purpose in [
-        (1,'数据准备与来源','说明全集范围、doc_id、预处理'),(2,'编译、词频与建索引','说明 Part 1/2 原始输出'),
-        (3,'独立对拍与测试通过','证明倒排索引正确性'),(4,'短语错误与修复前后','展示真实问题定位和回归'),
-        (5,'θ/τ 实验','分析阈值对空间与结果展示的影响'),(6,'原后端压力与 CLI 限制','Bonus 实测瓶颈'),
-        (7,'外存原型重启查询','Bonus 改进方向的有限验证'),(8,'4 亿不同词估算','区分测量、格式推导与条件估算')]])+
-        '\n详见 ../实验记录与报告素材.md；打开 index.html 可查看全部展示页。\n',encoding='utf-8')
-    print('PASS: report material + 8 browser evidence pages generated from actual results')
+    (ROOT/'documentation.md').write_text(report,encoding='utf-8')
+    (EVIDENCE/'截图说明.md').write_text('# 实验图索引\n\n图 01—08 为测试结果展示页的浏览器截图。测量、命令及输出分别保存在 results/ 中。\n\n'+
+        table(['编号','内容'],[[f'{i:02d}.png',name] for i,name in enumerate([
+        '语料来源与预处理','编译、词频与建索引','独立正确性检查','缺陷定位及修复对照',
+        'θ 与 τ 阈值实验','原 C 后端规模实验','SQLite 外存原型','四亿词资源估算'],1)]),encoding='utf-8')
+    print('Report and eight result pages generated')
 
 
 if __name__=='__main__':

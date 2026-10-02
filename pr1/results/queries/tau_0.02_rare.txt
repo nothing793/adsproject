@@ -1,2 +1,0 @@
-# query 1: hamlet
-Too common: hamlet  (df=1/42 = 0.024, tf=470, tau=0.020 -> 1 documents, result list suppressed)

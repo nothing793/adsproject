@@ -1,31 +1,14 @@
-/* pr1 Part 3 + Part 4：查询程序。
+/* 查询程序：加载 index.bin，执行单词、AND 和位置短语检索。
+ * 查询与建索引均按字母/数字连续段分词，再调用 Porter 词干算法。
+ * 当 df/N > tau 时保留词频统计，抑制文档与位置列表。
  *
- * 做三件事：
- *   1. 加载 index_gen 写出的 index.bin（index_load 会校验格式，损坏就拒绝加载）；
- *   2. 接受用户给出的词（或短语），返回包含它的文档 ID：
- *        单词查询    打印 df/N、tf 和全部命中位置；
- *        多词 AND    对多个查询单元取交集，打印共同命中的文档 ID；
- *        短语查询    先取交集，再按位置链验证位置连续；
- *   3. 查询阈值 τ：df/N > τ 的词判为 too common，走硬阈值（报出命中文档数，但不打印
- *      完整文档列表）。这是题面第 4 问要测的东西：阈值如何改变结果。
- *
- * 用法：
- *   ./query run                     # 单词
- *   ./query run zebra               # 多个参数 = AND（交集）
- *   ./query "to be or not to be"    # 单个参数含空白 = 短语（位置必须连续）
- *   ./query --tau=0.3 the           # 开阈值
- *   ./query                         # 不给参数则读 test.txt，每行一个查询
- *
- * test.txt 的行格式：单个词 = 单词查询；多个词 = AND；`phrase: a b c` = 短语查询。
- *
- * 结果都写进 output.txt（每次运行覆盖），每个查询一段、以 "# query" 开头。
- * stoplist.txt（index_gen 生成）存在时，用来解释 "Not found" 是不是停用词；
- * 它只影响提示文字，不影响查询结果 —— 索引里有什么完全由 index.bin 决定。
- *
- * 编译：gcc -std=c99 -Wall -Wextra -o query query.c stem.c -lm
- *       （索引模块在 index.h 里，本文件 #include 它即可，没有单独的 index_io.c）
+ * 用法：query hamlet；query antonio bassanio；query "et tu brute"。
+ * 不提供参数时读取 test.txt：普通行按 AND 处理，phrase: 行按短语处理。
+ * 结果写入 output.txt；stoplist.txt 仅用于说明未命中词的过滤原因。
+ * 编译：gcc -std=c99 -O2 -Wall -Wextra query.c stem.c -lm -o query
  */
 #include <ctype.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -385,7 +368,7 @@ static int run_phrase_query(query_term *terms, int n, int *docs, int *start_docs
                 int ok = 1;
                 for (int i = 0; i < n; i++)
                 {
-                    if (!contains_int(positions[i], counts_in_doc[i], start + i))
+                    if (start > INT_MAX - i || !contains_int(positions[i], counts_in_doc[i], start + i))
                     {
                         ok = 0;
                         break;
@@ -422,20 +405,29 @@ static int run_phrase_query(query_term *terms, int n, int *docs, int *start_docs
 
 /* ---------------- 一条查询 ---------------- */
 
-/* 把一个空白分隔的单元切成若干查询词，返回词数；多于 max 时多余部分忽略并返回 -1 */
+/* 与建索引使用相同的字母/数字连续段规则；超出词数上限时返回 -1。 */
 static int split_terms(const char *text, query_term *terms, int max)
 {
-    char buf[MAX_PHRASE * maxword];
-    snprintf(buf, sizeof(buf), "%s", text);
-
     int n = 0;
-    for (char *tok = strtok(buf, " \t"); tok; tok = strtok(NULL, " \t"))
+    const unsigned char *p = (const unsigned char *)text;
+    while (*p)
     {
+        while (*p && !isalnum(*p))
+            p++;
+        if (!*p)
+            break;
         if (n >= max)
-        {
             return -1;
+        char word[maxword];
+        size_t length = 0;
+        while (*p && isalnum(*p))
+        {
+            if (length + 1 < sizeof(word))
+                word[length++] = (char)tolower(*p);
+            p++;
         }
-        term_init(&terms[n++], tok);
+        word[length] = '\0';
+        term_init(&terms[n++], word);
     }
     return n;
 }
@@ -459,17 +451,7 @@ static int process_query(inverted_index *index, char *const *units, int unit_cou
         unit_doc_bufs[i] = NULL;
     }
 
-    /* 一个单元 = 一个词（无空白）或一个短语（含空白） */
-    int phrase_unit_count = 0;
-    for (int u = 0; u < unit_count; u++)
-    {
-        if (strpbrk(units[u], " \t") != NULL)
-        {
-            phrase_unit_count++;
-        }
-    }
-
-    int single_word = (unit_count == 1 && phrase_unit_count == 0);
+    int single_word = 0;
     int result_docs = -1;
 
     for (int u = 0; u < unit_count && result_docs != -2; u++)
@@ -488,6 +470,8 @@ static int process_query(inverted_index *index, char *const *units, int unit_cou
             unit_doc_counts[u] = 0;
             continue;
         }
+        if (unit_count == 1 && n == 1 && strpbrk(units[u], " \t") == NULL)
+            single_word = 1;
 
         /* 先解析每个词（打印 Found / Not found / Too common） */
         int usable = 1;
@@ -518,7 +502,7 @@ static int process_query(inverted_index *index, char *const *units, int unit_cou
                 {
                     fprintf(out, "Doc ID: %d, Position: %d\n", p->doc_id, p->pos);
                 }
-                doc_count = terms[0].df;
+                doc_count = posting_docs(terms[0].posting, docs);
             }
         }
         else if (is_phrase)
@@ -540,7 +524,7 @@ static int process_query(inverted_index *index, char *const *units, int unit_cou
             int match_limit = (terms[0].tf > 0) ? terms[0].tf : 1;
             for (int i = 1; i < n; i++)
             {
-                if (terms[i].tf < terms[0].tf)
+                if (terms[i].tf < match_limit)
                 {
                     match_limit = terms[i].tf > 0 ? terms[i].tf : 1;
                 }
@@ -697,7 +681,7 @@ int main(int argc, char *argv[])
         {
             char *end = NULL;
             tau = strtod(argv[i] + 6, &end);
-            if (!end || *end != '\0' || tau < 0.0 || tau > 1.0)
+            if (!end || end == argv[i] + 6 || *end != '\0' || !isfinite(tau) || tau < 0.0 || tau > 1.0)
             {
                 fprintf(stderr, "invalid --tau value: %s\n", argv[i] + 6);
                 usage(argv[0]);
@@ -767,6 +751,16 @@ int main(int argc, char *argv[])
         char line[1024];
         while (fgets(line, sizeof(line), input))
         {
+            if (!strchr(line, '\n') && strlen(line) == sizeof(line) - 1)
+            {
+                int next = fgetc(input);
+                if (next != EOF)
+                {
+                    fprintf(stderr, "query line in test.txt exceeds %zu bytes\n", sizeof(line) - 1);
+                    failed = 1;
+                    break;
+                }
+            }
             char *text = trim(line);
             if (*text == '\0')
             {
@@ -778,9 +772,12 @@ int main(int argc, char *argv[])
             {
                 line_units[n++] = trim(text + 7);
             }
-            else if (strpbrk(text, " \t"))
+            else
             {
-                /* 每个词一个单元，才会走 AND；整行作为一个单元会误走短语。 */
+                /* 普通行按语料分词规则构成 AND；phrase: 保留为一个短语单元。 */
+                for (char *p = text; *p; p++)
+                    if (!isalnum((unsigned char)*p))
+                        *p = ' ';
                 for (char *tok = strtok(text, " \t"); tok; tok = strtok(NULL, " \t"))
                 {
                     if (n >= MAX_UNITS)
@@ -795,10 +792,8 @@ int main(int argc, char *argv[])
                 {
                     break;
                 }
-            }
-            else
-            {
-                line_units[n++] = text;
+                if (n == 0)
+                    continue;
             }
             queries++;
             if (process_query(index, line_units, n, output, stoplist, stop_count, theta, tau, queries) < 0)
@@ -806,6 +801,11 @@ int main(int argc, char *argv[])
                 failed = 1;
                 break;
             }
+        }
+        if (ferror(input))
+        {
+            fprintf(stderr, "Error reading test.txt\n");
+            failed = 1;
         }
         fclose(input);
     }

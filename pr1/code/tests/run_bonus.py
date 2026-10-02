@@ -37,6 +37,11 @@ def main():
             output=text(folder/'output.txt')
             if mode=='vocabulary':
                 assert 'df=1/' in output and 'Doc ID: 0, Position: 0' in output
+                last=count-1
+                last_loaded=run_logged([BIN/'query.exe',f'term{last:010d}x'],folder,LOGS/(label+'_last_query'),timeout=180)
+                last_output=text(folder/'output.txt')
+                assert f'Doc ID: {last % measurement["documents"]}, Position: {last // measurement["documents"]}' in last_output
+                assert 'df=1/' in last_output
             elif mode=='common':
                 got=[int(line.split('Position: ')[1]) for line in output.splitlines() if line.startswith('Doc ID:')]
                 assert got==list(range(count))
@@ -78,10 +83,11 @@ def main():
     mean_key_bytes=16 # 15 visible bytes in term%010dx + null; assumption for estimate.
     estimate=dict(distinct_words=target_v,min_occurrences=target_v,documents=500000,
                   mean_key_bytes_assumption=mean_key_bytes,
-                  c_payload_bytes=types['index']+target_v*(types['posting']+types['position']+mean_key_bytes),
+                  doc_table_min_bytes=500000*types['int'],
+                  c_payload_bytes=types['index']+500000*types['int']+target_v*(types['posting']+types['position']+mean_key_bytes),
                   c_hash_average_chain=target_v/types['hashsize'],
                   v1_term_metadata_bytes_without_strings=18*target_v,
-                  warning='excludes allocator overhead, extra stats/sort arrays, repeated occurrences; estimate, not measured')
+                  warning='excludes allocator overhead, document-table spare capacity, extra stats/sort arrays, repeated occurrences; estimate, not measured')
     summary=dict(types=types,original_backend=rows,cli=cli_result,disk_backend_demo=demos,estimate=estimate,
                  executed_400m_distinct_words=False,created_500k_physical_files=False,
                  conclusion='C backend cannot scale directly; logical doc IDs fit; vocabulary/time/CLI/Windows file offsets are limiting')

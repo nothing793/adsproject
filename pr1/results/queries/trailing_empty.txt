@@ -1,3 +1,0 @@
-# query 1: alpha
-Found: alpha  (df=1/2 = 0.500, tf=1)
-Doc ID: 0, Position: 0

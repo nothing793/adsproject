@@ -1,17 +1,5 @@
-/* pr1（8-1 Roll Your Own Mini Search Engine）：共享索引模块（单头文件库）。
- *
- * 本文件既声明接口、也包含实现，两个程序各 #include 一次即可，不需要额外的 .c：
- *
- *   index_gen.c   —— Part 1（词频统计 + θ 阈值 -> stoplist.txt）
- *                    + Part 2（建内存索引 + 落盘 index.bin）+ 切词（原始文本 -> 词序列）
- *   query.c       —— Part 3（加载索引 + 单词 / AND / 短语查询）+ Part 4（查询阈值 τ）
- *   stem.c/stem.h —— 外部引用（Porter 算法），两个程序都要链它（-lm 也一样）
- *
- * 为什么把实现放在头文件里：index_gen（写 index.bin）和 query（读 index.bin）必须对
- * 同一份文件格式达成一致。实现只有这一份、两边都 #include 它，就不可能出现"建的时候
- * 一套、读的时候另一套"。函数全部写成 static inline，所以：
- *   - 每个程序各自编译出一份私有副本，链接时不会重复定义；
- *   - 某个程序用不到的那一半（比如 query 用不到 index_save）不会触发 -Wunused-function。
+/* 共享位置倒排索引及二进制读写模块。
+ * index_gen.c 与 query.c 使用同一组 static inline 接口。
  *
  * 索引文件 index.bin（版本 1）：小端定长整数 + LEB128 变长整数
  *
@@ -28,7 +16,7 @@
  *
  *   docs 段：文档数 × u32（doc_id，升序去重；给 df/N 提供 N）
  *   terms 段：词条数 × 记录，按词干升序（便于将来落盘二分 / 多路归并）
- *     u32 df、u32 tf、u64 postings 段内偏移、u16 词干字节数、词干字节（不含 '\0'）
+ *     u32 df、u32 tf、u64 文件绝对偏移、u16 词干字节数、词干字节（不含 '\0'）
  *   postings 段：与 terms 段同序，每个词条一段，全部 LEB128 编码
  *     [doc 增量][该文档的位置数][位置增量 × 位置数] 这样的组重复 df 次
  *       - 第一个 doc 增量 = doc_id 本身（相对 0 算），其后 = doc_id - 上一个 doc_id（≥ 1）
@@ -38,11 +26,11 @@
  *
  *   df / tf 在 terms 段里是冗余的（能从 postings 段推出来），写这两个字段是为了让 query
  *   不必重算、并和头部总数互相校验。index_load() 会逐项验证（魔数、版本、段偏移、
- *   每个词条的 df/tf、位置总数、文档表），任何不一致都返回 NULL，不会把残缺索引交给查询程序。
+ *   每个词条的 df/tf、位置总数、文档表），结构约束不满足时返回 NULL。
  *
  *   doc_id / pos 用 u32 存（写入侧已保证非负且 ≤ INT_MAX），文件偏移用 u64。
- *   这份格式面向真实语料（40 部剧，索引几 MB）；Bonus 规模（4×10^8 词）要换成
- *   分块 + 前缀压缩的 SSTable 词典，见 README.md 第 7.2 节 —— 两者共用同一套接口，只换后端。
+ *   当前加载器使用 long 文件偏移并全量载入索引。
+ *   大规模外存方案及实现范围见 ../documentation.md 的 Bonus 分析。
  */
 #ifndef PR1_INDEX_H
 #define PR1_INDEX_H
@@ -371,7 +359,7 @@ static inline int encode_postings(const Posting *posting, ByteBuf *buf)
         prev_pos = -1;
         while (pos && pos->doc_id == doc)
         {
-            if (buf_put_varint(buf, (unsigned long)(pos->pos - prev_pos)) < 0)
+            if (buf_put_varint(buf, (unsigned long)((long long)pos->pos - prev_pos)) < 0)
             {
                 return -1;
             }
@@ -660,6 +648,7 @@ static inline inverted_index *index_load(FILE *in)
     unsigned long long ndocs = 0, nterms = 0, npostings = 0;
     unsigned long long docs_off = 0, terms_off = 0, postings_off = 0;
     unsigned long long decoded = 0, prev_end;
+    char previous_word[maxword] = "";
     long long size = 0;
 
     if (file_size(in, &size) < 0 || size < IDX_HEADER)
@@ -680,7 +669,7 @@ static inline inverted_index *index_load(FILE *in)
     }
     if (version != IDX_VERSION || header_size != IDX_HEADER)
     {
-        goto fail;   /* 版本不匹配：重新跑 index_gen，别硬猜格式 */
+        goto fail;   /* 版本不匹配：重新构建索引 */
     }
     if (get_u64(in, &ndocs) < 0 || get_u64(in, &nterms) < 0 || get_u64(in, &npostings) < 0
         || get_u64(in, &docs_off) < 0 || get_u64(in, &terms_off) < 0
@@ -690,13 +679,14 @@ static inline inverted_index *index_load(FILE *in)
     }
 
     /* 段偏移必须递增、落在文件内，且各段的长度不能超出下一段的起点。
-     * 没有这些检查，一个损坏的文件会让我们按垃圾数字分配内存 / 一直读到天荒地老。 */
-    if (docs_off < IDX_HEADER || terms_off < docs_off || postings_off < terms_off
+     * 没有这些检查，非法长度可能造成过量分配或无效读取。 */
+    if (docs_off != IDX_HEADER || terms_off < docs_off || postings_off < terms_off
         || postings_off > (unsigned long long)size)
     {
         goto fail;
     }
-    if (docs_off + 4ULL * ndocs > terms_off)
+    if (ndocs > INT_MAX || ndocs > (terms_off - docs_off) / 4ULL
+        || terms_off - docs_off != 4ULL * ndocs)
     {
         goto fail;
     }
@@ -720,6 +710,7 @@ static inline inverted_index *index_load(FILE *in)
     {
         unsigned long doc_id = 0;
         if (get_u32(in, &doc_id) < 0 || doc_id > (unsigned long)INT_MAX
+            || (k > 0 && doc_id <= (unsigned long)index->docs.ids[index->docs.count - 1])
             || index_add_doc(&index->docs, (int)doc_id) != 1)
         {
             goto fail;   /* 文件里的 doc_id 必须升序去重 */
@@ -754,6 +745,12 @@ static inline inverted_index *index_load(FILE *in)
             goto fail;
         }
         word[word_len] = '\0';
+        if ((k > 0 && strcmp(previous_word, word) >= 0)
+            || df == 0 || df > ndocs || tf < df || tf > (unsigned long)INT_MAX)
+        {
+            goto fail;
+        }
+        strcpy(previous_word, word);
         record_end = ftell(in);
         if (record_end < 0 || (unsigned long long)record_end > postings_off)
         {
@@ -761,7 +758,7 @@ static inline inverted_index *index_load(FILE *in)
         }
 
         /* postings 段：词典里的偏移必须递增、不重叠，且落在文件内 */
-        if (off < prev_end || off + 1ULL > (unsigned long long)size
+        if (off != prev_end || off >= (unsigned long long)size
             || fseek(in, (long)off, SEEK_SET) != 0)
         {
             goto fail;
@@ -775,11 +772,11 @@ static inline inverted_index *index_load(FILE *in)
             {
                 goto fail;
             }
-            doc += gap;
-            if ((group > 0 && gap == 0) || doc > (unsigned long)INT_MAX || tf == 0)
+            if ((group > 0 && gap == 0) || gap > (unsigned long)INT_MAX - doc)
             {
                 goto fail;   /* doc_id 必须严格递增 */
             }
+            doc += gap;
             /* 每个 posting 必须引用文档表里的 ID；文档本身可以没有索引词。
              * 不能要求最大 posting doc_id 等于最后一篇文档：空文档/全停用词文档合法。 */
             int lo = 0, hi = index->docs.count;
@@ -806,11 +803,11 @@ static inline inverted_index *index_load(FILE *in)
                 {
                     goto fail;
                 }
-                prev += pos_gap;
-                if (prev > (unsigned long)INT_MAX + 1UL)
+                if (pos_gap > (unsigned long)INT_MAX + 1UL - prev)
                 {
                     goto fail;
                 }
+                prev += pos_gap;
                 /* 组内首个 pos 记成 pos+1，所以这里减 1 还原 */
                 if (index_add_position(index, word, (int)doc, (int)(prev - 1)) != 1)
                 {
@@ -837,6 +834,10 @@ static inline inverted_index *index_load(FILE *in)
 
     /* 交叉校验：位置总数、段边界、文档表与位置链必须自洽 */
     if (decoded != npostings)
+    {
+        goto fail;
+    }
+    if (ftell(in) < 0 || (unsigned long long)ftell(in) != postings_off)
     {
         goto fail;
     }

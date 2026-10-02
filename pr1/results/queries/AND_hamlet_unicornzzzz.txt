@@ -1,4 +1,0 @@
-# query 1: hamlet unicornzzzz
-Found: hamlet  (df=1/42 = 0.024, tf=470)
-Not found: unicornzzzz
-AND [hamlet unicornzzzz]: 0 document(s)

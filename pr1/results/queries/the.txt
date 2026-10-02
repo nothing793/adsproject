@@ -1,2 +1,0 @@
-# query 1: the
-Not found: the  (stop word: df=42/42 = 1.0000 > theta=0.5000, removed from the index in part 1)

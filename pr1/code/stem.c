@@ -1,25 +1,11 @@
-/* pr1（8-1 Roll Your Own Mini Search Engine）的词干提取模块。
- *
- * 对外提供两个接口：
- *     int  stem(char *p, int index, int position);   Porter 词干算法本体
- *     void stemword(char *word);                     转小写 + 词干提取的封装
- *
- * 建索引（词计数、倒排索引）与查询时对同一个词都要走这套处理，索引里存的是
- * 词干而不是原形，这样 "run" / "runs" / "running" 才会命中同一篇文档。
- *
+/* Porter 词干提取模块。
+ * stem() 原地处理小写字符串，返回词干末字符的下标；
+ * stemword() 负责小写转换与结束符补写。
+ * 建索引和查询各执行一次词干化。
  * 来源：https://github.com/wooorm/stmr.c
- *       Martin Porter 1980 年词干算法的 ANSI C 实现（MIT 许可，见仓库
- *       LICENSE-stmr.txt）。仓库根目录的 stmr.c / stmr.h 是上游原样副本，
- *       只作对照，编译本模块时既不需要也不要一起编译（符号会重复定义）。
- *
- * 调用约定：
- *   1. stem() 只处理小写字母序列，所以调用前要先用 tolower() 统一大小写；
- *   2. stem(p, 0, len - 1) 原地改写 p[0 .. len-1]，返回词干末字符的下标，
- *      不写结束符，调用方需要自己补 '\0'；
- *   3. 长度 ≤ 2 的字符串原样返回（此时返回值即 len - 1，补 '\0' 依然安全）；
- *   4. 内部使用文件级静态变量，不可重入、非线程安全（本项目单线程，无影响）。
+ * MIT 许可及版权声明见 LICENSE-stmr.txt。
+ * 内部使用静态变量，适用于本项目的单线程运行方式。
  */
-
 #include <ctype.h>
 #include <string.h>
 

@@ -1,4 +1,0 @@
-# query 1: yorick horatio
-Found: yorick  (df=1/42 = 0.024, tf=2)
-Found: horatio  (df=1/42 = 0.024, tf=158)
-Phrase [yorick horatio]: 0 match(es) in 0 document(s)

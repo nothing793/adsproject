@@ -1,2 +1,0 @@
-# query 1: caesar
-Too common: caesar  (df=19/42 = 0.452, tf=602, tau=0.100 -> 19 documents, result list suppressed)

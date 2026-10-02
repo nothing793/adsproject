@@ -1,5 +1,0 @@
-# query 1: gallop apace
-Found: gallop  (df=8/42 = 0.190, tf=12)
-Found: apac  (df=20/42 = 0.476, tf=28)
-Phrase [gallop apace]: 1 match(es) in 1 document(s)
-Doc ID: 34, Positions: 13905
