@@ -1,16 +1,20 @@
-# Generated program binaries / large experiment scratch
-pr1/bin/
-pr1/code/*.exe
-pr1/code/index_gen
-pr1/code/query
-**/__pycache__/
-**/*.pyc
-**/index.bin
-**/roundtrip.bin
-**/index.bin.tmp
-**/tokens.txt
-**/output.txt
-pr1/results/bonus/
-pr1/results/edge_cases/
-work/
-*.sqlite
+# ---------------------------------------------------------------------------
+# 本仓库只跟踪「最终提交」内容：
+#   pr1/code/             —— 源码、共享头文件与测试脚本（整套保留）
+#   pr1/documentation.md  —— 报告
+# 其余文件（语料 data/、实验结果 results/、证据 evidence/、截图、各层 readme 等）
+# 一律忽略，不进入提交。抓取（fetch/pull）相关约定同样只取 code/ 与 documentation。
+# 若日后要改动白名单，先确认是否需要同步更新本文件顶部的说明。
+# ---------------------------------------------------------------------------
+
+# 1. 先忽略仓库根目录下的一切（含 .agents/、.codex/ 等本地运行目录）
+/*
+# .gitignore 自身需要入库
+!/.gitignore
+# 必须放行 pr1/ 目录本身，git 才会下探进去，否则下面的白名单不生效
+!/pr1/
+
+# 2. pr1/ 下默认全部忽略，再逐个放行最终提交
+/pr1/*
+!/pr1/code/
+!/pr1/documentation.md
