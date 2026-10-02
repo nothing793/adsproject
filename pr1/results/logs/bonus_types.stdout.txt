@@ -1,0 +1,1 @@
+{"pointer":8,"long":4,"int":4,"position":16,"posting":32,"index":8000072,"hashsize":1000007,"long_max":2147483647}

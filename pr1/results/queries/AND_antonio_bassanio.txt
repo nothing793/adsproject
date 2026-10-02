@@ -1,0 +1,5 @@
+# query 1: antonio bassanio
+Found: antonio  (df=7/42 = 0.167, tf=267)
+Found: bassanio  (df=1/42 = 0.024, tf=122)
+AND [antonio bassanio]: 1 document(s)
+Doc ID: 7

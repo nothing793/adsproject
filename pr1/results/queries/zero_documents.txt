@@ -1,0 +1,2 @@
+# query 1: hamlet
+Not found: hamlet

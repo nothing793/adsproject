@@ -36,6 +36,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
 #include "index.h"
 #include "stem.h"
@@ -700,7 +703,12 @@ int main(int argc, char *argv[])
         remove(tmp_path);
         goto cleanup;
     }
+    /* POSIX rename 可替换目标；Windows CRT rename 不可，使用系统原子替换接口。 */
+#ifdef _WIN32
+    if (!MoveFileExA(tmp_path, INDEX_FILE, MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH))
+#else
     if (rename(tmp_path, INDEX_FILE) != 0)
+#endif
     {
         fprintf(stderr, "Error renaming %s to %s\n", tmp_path, INDEX_FILE);
         remove(tmp_path);

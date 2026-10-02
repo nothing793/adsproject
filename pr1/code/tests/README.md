@@ -1,5 +1,24 @@
 # pr1 测试目录
 
+## 当前实验入口
+
+Python 3 + gcc，无第三方 Python 包依赖：
+
+```powershell
+python run_extended.py               # 全集构建、独立对拍、查询/边界/修复回归
+python run_extended.py --reuse-indexes # 复用索引，重编译并重新验证内容与查询
+python run_bonus.py                  # 原 C 后端压力与独立 SQLite 外存原型
+python sweep.py                     # 展示最近一次已验证的 θ/τ 文档数表
+python sweep.py --rebuild            # 重新构建与验证再展示
+python make_lab_report.py            # 从日志生成报告素材和截图展示页
+```
+
+最终全集检查 78 PASS / 0 FAIL；压力测试最高 50 万逻辑 doc_id / 100 万不同词干。它们不等同于 50 万实体文件、4 亿不同词端到端测试。原始数据在 `../../results/`，8 张浏览器截图在 `../../evidence/screenshots/`；浏览器截图生成需要已有 Playwright 和 Edge，运行 `capture_evidence.cjs`（可设置 PLAYWRIGHT_MODULE）。
+
+`prepare_shakespeare.py` 从官方 MIT 镜像提取语料；实际清单与 HTML 已附。`lab_support.py` 保存每次完整命令、stdout/stderr、退出码、墙钟时间和 Windows 峰值 working set。`bonus_probe.c` 调用原 C 内存后端；`bonus_disk_demo.py` 为独立外存演示，不兼容原 index.bin。
+
+以下内容保留原合成语料测试说明，其中 21 项及 /tmp 工作路径为历史记录。
+
 本目录是 pr1 迷你搜索引擎的测试与实验脚本，对应的正文说明见
 [`../README.md`](../README.md) 第 12 节。
 

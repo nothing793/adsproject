@@ -1,0 +1,155 @@
+--- a/pr1/code/query.c
++++ b/pr1/code/query.c
+@@ -314,15 +314,14 @@
+  * 返回 -1 = 内存不足。 */
+ static int run_phrase_query(query_term *terms, int n, int *docs, int *start_docs, int *starts)
+ {
+-    /* 用 tf 最小的词当锚点：候选起始位置最少，验证代价最低。会改动 terms 的顺序，
+-     * 所以调用方若要按原顺序打印，得在那之前完成。 */
++    /* 用 tf 最小的词当锚点，但不能改变短语词序。
++     * anchor 位于原短语的第 anchor 个词，候选起点 = 命中位置 - anchor。 */
++    int anchor = 0;
+     for (int i = 1; i < n; i++)
+     {
+-        for (int j = i; j > 0 && terms[j].tf < terms[j - 1].tf; j--)
+-        {
+-            query_term tmp = terms[j];
+-            terms[j] = terms[j - 1];
+-            terms[j - 1] = tmp;
++        if (terms[i].tf < terms[anchor].tf)
++        {
++            anchor = i;
+         }
+     }
+ 
+@@ -376,11 +375,15 @@
+             {
+                 counts_in_doc[i] = posting_positions(terms[i].posting, doc, positions[i]);
+             }
+-            for (int a = 0; a < counts_in_doc[0]; a++)
+-            {
+-                int start = positions[0][a];
++            for (int a = 0; a < counts_in_doc[anchor]; a++)
++            {
++                int start = positions[anchor][a] - anchor;
++                if (start < 0)
++                {
++                    continue;
++                }
+                 int ok = 1;
+-                for (int i = 1; i < n; i++)
++                for (int i = 0; i < n; i++)
+                 {
+                     if (!contains_int(positions[i], counts_in_doc[i], start + i))
+                     {
+@@ -769,7 +772,7 @@
+             {
+                 continue;
+             }
+-            char *line_units[2];
++            char *line_units[MAX_UNITS];
+             int n = 0;
+             if (strncmp(text, "phrase:", 7) == 0)
+             {
+@@ -777,7 +780,21 @@
+             }
+             else if (strpbrk(text, " \t"))
+             {
+-                line_units[n++] = text;   /* 多个词 = AND（引号在文件里不需要） */
++                /* 每个词一个单元，才会走 AND；整行作为一个单元会误走短语。 */
++                for (char *tok = strtok(text, " \t"); tok; tok = strtok(NULL, " \t"))
++                {
++                    if (n >= MAX_UNITS)
++                    {
++                        fprintf(stderr, "too many query units in test.txt (max %d)\n", MAX_UNITS);
++                        failed = 1;
++                        break;
++                    }
++                    line_units[n++] = tok;
++                }
++                if (failed)
++                {
++                    break;
++                }
+             }
+             else
+             {
+--- a/pr1/code/index.h
++++ b/pr1/code/index.h
+@@ -659,7 +659,7 @@
+     unsigned long version = 0, header_size = 0, word_len = 0;
+     unsigned long long ndocs = 0, nterms = 0, npostings = 0;
+     unsigned long long docs_off = 0, terms_off = 0, postings_off = 0;
+-    unsigned long long max_doc = 0, decoded = 0, prev_end;
++    unsigned long long decoded = 0, prev_end;
+     long long size = 0;
+ 
+     if (file_size(in, &size) < 0 || size < IDX_HEADER)
+@@ -779,6 +779,21 @@
+             if ((group > 0 && gap == 0) || doc > (unsigned long)INT_MAX || tf == 0)
+             {
+                 goto fail;   /* doc_id 必须严格递增 */
++            }
++            /* 每个 posting 必须引用文档表里的 ID；文档本身可以没有索引词。
++             * 不能要求最大 posting doc_id 等于最后一篇文档：空文档/全停用词文档合法。 */
++            int lo = 0, hi = index->docs.count;
++            while (lo < hi)
++            {
++                int mid = lo + (hi - lo) / 2;
++                if (index->docs.ids[mid] < (int)doc)
++                    lo = mid + 1;
++                else
++                    hi = mid;
++            }
++            if (lo == index->docs.count || index->docs.ids[lo] != (int)doc)
++            {
++                goto fail;
+             }
+             if (get_uvarint(in, &count) < 0 || count == 0 || total + count > tf)
+             {
+@@ -808,10 +823,6 @@
+         {
+             goto fail;   /* 词典里的 tf 与实际位置数不符 */
+         }
+-        if (df > 0 && doc > max_doc)
+-        {
+-            max_doc = doc;
+-        }
+         decoded += total;
+ 
+         /* 这一段 postings 到此结束：记下结束位置，下一段的偏移必须 ≥ 它（不许重叠），
+@@ -833,8 +844,7 @@
+     {
+         goto fail;   /* postings 段之后不该有多余字节 */
+     }
+-    if (ndocs == 0 ? decoded != 0
+-                   : (max_doc != (unsigned long long)index->docs.ids[index->docs.count - 1]))
++    if (ndocs == 0 && decoded != 0)
+     {
+         goto fail;
+     }
+--- a/pr1/code/index_gen.c
++++ b/pr1/code/index_gen.c
+@@ -36,6 +36,9 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
++#ifdef _WIN32
++#include <windows.h>
++#endif
+ 
+ #include "index.h"
+ #include "stem.h"
+@@ -700,7 +703,12 @@
+         remove(tmp_path);
+         goto cleanup;
+     }
++    /* POSIX rename 可替换目标；Windows CRT rename 不可，使用系统原子替换接口。 */
++#ifdef _WIN32
++    if (!MoveFileExA(tmp_path, INDEX_FILE, MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH))
++#else
+     if (rename(tmp_path, INDEX_FILE) != 0)
++#endif
+     {
+         fprintf(stderr, "Error renaming %s to %s\n", tmp_path, INDEX_FILE);
+         remove(tmp_path);

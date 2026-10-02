@@ -1,0 +1,12 @@
+{
+  "command": [
+    "C:\\Users\\liangji789\\Documents\\Codex\\2026-10-02\\https-github-com-nothing793-nothing793-1\\outputs\\pr1\\bin\\query.exe",
+    "term0000000000x"
+  ],
+  "cwd": "C:\\Users\\liangji789\\Documents\\Codex\\2026-10-02\\https-github-com-nothing793-nothing793-1\\outputs\\pr1\\results\\bonus\\vocabulary_10000",
+  "exit_code": 0,
+  "seconds": 0.235667,
+  "peak_working_set_bytes": 13148160,
+  "timeout": false,
+  "memory_method": "GetProcessMemoryInfo.PeakWorkingSetSize (10 ms polling)"
+}

@@ -1,0 +1,14 @@
+{
+  "command": [
+    "C:\\Users\\liangji789\\Documents\\Codex\\2026-10-02\\https-github-com-nothing793-nothing793-1\\outputs\\pr1\\bin\\index_gen.exe",
+    "--theta=1",
+    "C:\\Users\\liangji789\\Documents\\Codex\\2026-10-02\\https-github-com-nothing793-nothing793-1\\outputs\\pr1\\results\\edge_cases\\trailing_empty\\first.txt",
+    "C:\\Users\\liangji789\\Documents\\Codex\\2026-10-02\\https-github-com-nothing793-nothing793-1\\outputs\\pr1\\results\\edge_cases\\trailing_empty\\last.txt"
+  ],
+  "cwd": "C:\\Users\\liangji789\\Documents\\Codex\\2026-10-02\\https-github-com-nothing793-nothing793-1\\outputs\\pr1\\results\\edge_cases\\trailing_empty",
+  "exit_code": 0,
+  "seconds": 0.049073,
+  "peak_working_set_bytes": 12775424,
+  "timeout": false,
+  "memory_method": "GetProcessMemoryInfo.PeakWorkingSetSize (10 ms polling)"
+}

@@ -1,0 +1,12 @@
+{
+  "command": [
+    "C:\\Users\\liangji789\\Documents\\Codex\\2026-10-02\\https-github-com-nothing793-nothing793-1\\outputs\\pr1\\bin\\bonus_probe.exe",
+    "types"
+  ],
+  "cwd": "C:\\Users\\liangji789\\Documents\\Codex\\2026-10-02\\https-github-com-nothing793-nothing793-1\\outputs\\pr1",
+  "exit_code": 0,
+  "seconds": 0.116909,
+  "peak_working_set_bytes": 5046272,
+  "timeout": false,
+  "memory_method": "GetProcessMemoryInfo.PeakWorkingSetSize (10 ms polling)"
+}

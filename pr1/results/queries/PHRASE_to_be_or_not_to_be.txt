@@ -1,0 +1,8 @@
+# query 1: to be or not to be
+Not found: to  (stop word: df=42/42 = 1.0000 > theta=0.5000, removed from the index in part 1)
+Not found: be  (stop word: df=42/42 = 1.0000 > theta=0.5000, removed from the index in part 1)
+Not found: or  (stop word: df=42/42 = 1.0000 > theta=0.5000, removed from the index in part 1)
+Not found: not  (stop word: df=42/42 = 1.0000 > theta=0.5000, removed from the index in part 1)
+Not found: to  (stop word: df=42/42 = 1.0000 > theta=0.5000, removed from the index in part 1)
+Not found: be  (stop word: df=42/42 = 1.0000 > theta=0.5000, removed from the index in part 1)
+Phrase [to be or not to be]: 0 match(es) in 0 document(s)

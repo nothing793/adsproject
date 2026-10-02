@@ -1,318 +1,295 @@
-# pr1 完整报告：自己写一个迷你搜索引擎
+# PR1 实验报告：Roll Your Own Mini Search Engine
 
-> 课程：ADS（算法与数据结构）；题目：**8-1 Roll Your Own Mini Search Engine**（题面截图见 `image.png`）。
-> 代码在 [`code/`](code/)，设计细节与踩坑记录见 [`code/README.md`](code/README.md)，
-> 使用说明见 [`readme.md`](readme.md)。本文是完整报告：题目分析、方法、实验与验证。
->
-> **语料说明（重要）**：本报告的实验在**确定性合成语料**上完成（40 篇 × 4000 词，
-> `code/tests/gen_corpus.py` 生成，固定随机种子）。真实语料（莎士比亚全集，
-> `shakespeare.mit.edu`）按指示**尚未下载**；换成真实语料只需
-> `./index_gen <每部剧一个文件>`，之后的查询与全部阈值实验可原样复用，
-> 结论（θ / τ 的单调性与有效区间）与语料无关。
+## Chapter 1：问题描述与目标
 
-## 1. 题目要求
+对题目指定 MIT 莎士比亚全集构建迷你搜索引擎。要求：（1）统计词频，划分 interesting / noisy words；（2）建立去除停用词、带词干化的位置倒排索引；（3）支持单词、AND 和短语，返回文档 ID；（4）测试查询阈值；（5）讨论 50 万文件 / 4 亿不同词的可行性。
 
-1. 对莎士比亚全集做**词频统计**，识别 stop words（noisy words），并回答
-   *"How and where do you draw the line between 'interesting' and 'noisy' words?"*（1 pt.）
-2. 建立**带词干化**的倒排索引，且 *The stop words identified in part (1) must not be included*（5 pts.）
-3. 写**查询程序**，在倒排文件索引之上接受用户给出的词（或短语），返回包含它的文档 ID（3 pts.）
-4. **测试阈值对查询结果的影响**（Testing 2 pts.）
-5. Bonus：*What if you have 500 000 files and 400 000 000 distinct words?*（额外加分）
+输入为一组文本文件，每个文件一篇文档，doc_id 按固定清单顺序分配；输出包括词频/停用词记录、index.bin 和查询结果。真实语料按网站目录取 42 个条目，十四行诗 154 首合并。字段 df 是不同文档数，cf/tf 是出现次数，不能混用。
 
-本实现把题目拆成三段流水线 + 两个实验脚本：
+## Chapter 2：数据结构与算法
 
-```
-原始文本 ─┬─ index_gen pass 1 ─> stoplist.txt（部分 1 的统计）
-          └─ index_gen pass 2 ─> index.bin ── query ──> output.txt
-```
+### 2.1 预处理与两遍扫描
 
-| 题面 | 实现位置 | 产物 |
-| --- | --- | --- |
-| (1) 词频 / 停用词 | `code/index_gen.c` pass 1（`collect_stats()` / `stoplist_build()` / `wc_report()`） | `stoplist.txt`、`--count-only` 报告 |
-| (2) 倒排索引 | `code/index_gen.c` pass 2（`tokenize_document()` + `index_save()`） | `index.bin` |
-| (3) 查询 | `code/query.c`（单词 / 多词 AND / 短语） | `output.txt` |
-| (4) 阈值实验 | `code/query.c --tau=` + `code/tests/sweep.py` | 第 6 节的表 B |
+先确定性地从 HTML 提取可见正文，再以 ASCII 字母/数字连续段分词、转小写。位置是完整文本中的 0 起始 token 编号。切词层不做词干化；每个原词在扫描/查询时通过 Porter stemword 一次变成词干，避免二次词干化改变 key。词干模块来源见 stem.c 注释。
 
-## 2. 总体设计
+Pass 1 为全部词建立位置索引，统计 cf/df。停用词判据为 df/N > θ，默认 θ=0.5；保存 stoplist 后释放第一遍索引。Pass 2 重新扫描全部文档，跳过 stoplist，保留原文位置，写出最终索引。--count-only 保留独立的词频统计入口。统计和建索引共用切词/词干口径。
 
-### 2.1 为什么是"两遍扫描"
+高 df/N 表示在该文档粒度下区分能力弱，因此作为 noisy 的可操作定义；它不是语义上的绝对判断，部分内容词也会被删除。θ 实验用于展示空间与可检索范围的取舍。
 
-`df`（出现某词干的文档数）是**整份语料**的统计量，`N` 只有扫完才知道；而题面明写索引里**不能包含**
-Part 1 认定的停用词。所以必须在建索引之前先完成统计：
+### 2.2 内存与文件索引
 
-```
-pass 1：读原始语料 → 建一份内存索引（只为拿 cf / df）→ df/N > θ 的词写进 stoplist.txt
-pass 2：丢掉 pass 1 的索引 → 再读一遍语料 → 跳过 stoplist 里的词 → 建索引 → index.bin
-```
+内存使用固定 1,000,007 个哈希桶，链地址法按词干查 Posting；每个 Posting 保存词干、tf 和按 (doc_id,pos) 升序的位置链。DocTable 是升序去重文档 ID 数组，允许空文档，df/N 的 N 包含所有文档。Position 记录文档、位置和 next。
 
-两遍都调用同一个 `tokenize_document()` 与 `index_add_position()`，因此切词、词干化、去重、排序的口径
-不可能出现"统计一套、建索引另一套"。代价是时间约翻倍（合成语料 0.79 s，真实语料 88 万条三元组约 2.6 s），
-换来的是"索引里有没有停用词"这件事可验证（第 7 节的对拍就是验证这一点）。
+index.bin v1 的 64 B 头部保存魔数、版本、N/V/位置总数和三段偏移；文档段为 u32 ID；词典段按词干排序，每条为 u32 df、u32 tf、u64 posting 偏移、u16 字符串长度和字符串；位置段采用文档/位置差分与 LEB128。整数按小端写出，不直接 dump C 结构体。加载验证段边界、tf/df、总位置数和文档引用。没有校验和，因此结构自洽的字节改动不一定能发现。
 
-### 2.2 为什么把词频统计并入建索引程序
+写文件先写临时文件再替换；Windows 使用 MoveFileExA，POSIX 使用 rename。本次验证 Windows 重建覆盖。文件格式未改，但 Windows long 文件偏移仍限制超大索引。
 
-按题面字面（*the programs for word counting, index generation and query processing*）可以把 Part 1
-做成独立可执行文件、把 stoplist 写成中间文件再喂给 Part 2。这样做有四个实际代价：
+### 2.3 查询算法
 
-1. 多一份 `stoplist.txt` 的格式规范、加载器与错误处理；
-2. **陈旧输入会静默出错**：`stoplist.txt` 与语料不同步时，`index.bin` 结构完全合法、
-   加载成功、查询正常，只是内容错了 —— 这比格式损坏更难发现；
-3. 可复现性退化：原来是"同一份语料跑两次得到逐字节相同的 `index.bin`"，
-   外挂 stoplist 之后变成"语料 + `stoplist.txt` + θ 三者都相同"；
-4. 两处各自的切词 / 词干化口径必须人工保持一致，而**口径不一致是这类作业最常见的隐蔽 bug**。
+单词：归一化后查表，输出 df/tf 与全部位置。AND：各词提取升序文档列表，指针求交。短语：先求文档交集，再选 tf 最小词的原始下标 anchor；候选起点为 anchor 位置减 anchor，下标 i 的词必须位于 start+i。保持短语词序，不能按 tf 重排词数组。CLI 多个参数与 test.txt 普通多词行均为 AND；单个含空格参数或 phrase: 行为短语。
 
-合并后，`stoplist.txt` 只作为 Part 1 的**证据与解释材料**（`query` 用它把 `Not found` 说明成
-"这是 Part 1 剔除的停用词"），不参与查询正确性。同时用 `./index_gen --count-only` 保留
-"只做 Part 1、不建索引"的独立入口，便于演示与对拍。
+τ 为查询时的硬抑制阈值：已有词 df/N > τ 时打印统计，抑制完整 ID/位置列表。相等不抑制；原文匹配不因抑制变为不存在。含已删除停用词的精确短语无法在当前索引恢复。
 
-### 2.3 为什么切词层不做词干化
+### 2.4 复杂度与规模限制
 
-`stemword()`（转小写 + Porter）全流程**只能做两次**：建索引时一次、查询时一次。
-如果切词层先词干化、建索引时又切一次，而 **Porter 不是幂等的**。
-用本项目的 `stem.c` 实测 604 个常见词：
+一次哈希查找的平均链长度约为 V/hashsize。当前位置插入每次从头找位置，同一词的升序 tf 次插入需要 O(tf²)，不能将整条构建流程简单称为 O(tokens)。内存至少与词典和保留位置数一起增长。查询当前加载完整索引，并逐词 seek 到 postings，因此短查询也承担全量加载成本；具体实测见 Chapter 3。
 
-```
-tested=604 non-idempotent=11
-because -> becaus -> becau      release -> releas -> relea
-license -> licens -> licen      increases -> increas -> increa
-equivalent -> equival -> equiv  ...
+### 2.5 验证原则
+
+独立 Python 切词/聚合/二进制解析核对全部位置；词干实现共享，明确验证边界。另验证重复构建、load/save 往返、阈值边界、短语词序、空文档、文件输入与损坏拒绝。记录失败、修复前源码、最小反例和复测；将逻辑文档压力、实体文件输入、实际测量和理论估算分别说明。
+
+## Chapter 3：真实实验、过程记录与 Bonus
+
+
+本文件由真实测试 JSON / 控制台日志生成，生成时间：2026-10-02T21:40:23+08:00（北京时间）。这份素材补充已有代码与历史合成语料报告，可据此编写实验报告的测试、分析和 Bonus 章节。
+
+### 1. 数据来源与预处理记录
+
+- 当前作业仓库：<https://github.com/nothing793/adsproject>，main 基线 commit `5d36a46145236b406eb37643db4e5cefcb351f3a`。与最初参考仓库 commit `3e6a56990661e8a7f7db92e899f87ff379b10431` 的五个主源码在归一化换行后完全一致，已有全集构建数据适用。核验见 `evidence/repository_baseline.json`。
+- 题目指定网站：<https://shakespeare.mit.edu/>；使用该网站公开 Git 镜像 <https://github.com/TheMITTech/shakespeare>，commit `6b82db852c7322dd33e95db347f0ddfc812c6409`，完整 HTML 保存在 `data/shakespeare/html/`。
+- 以网站目录为全集范围：37 部戏剧 + 5 个诗歌集合，共 42 篇文档；154 首十四行诗合并为一篇。42 是网站条目数，不是戏剧部数。
+- 从戏剧首个 `<h3>` 开始取可见文本；诗歌取正文可见文本。去掉 HTML 标签、导航与广告，保留场次标题、角色名和舞台说明。
+- 预处理第一次在 `elegy.html` 得到空正文；原因是原 HTML 的 `</TITLE` 缺少 `>`，解析器把后续内容当作 head。给该标签补 `>` 后，全部 42 篇均有正文。修复只改标签，不改文学内容。
+- `data/shakespeare/manifest.json` 记录源 URL、HTML SHA-256、文本 SHA-256、字数；`documents.csv` 给出 doc_id 与作品名称。顺序固定，doc_id 从 0 开始。
+- C tokenizer 使用 ASCII 字母/数字分词、转小写，位置从 0 开始。撇号和连字符是分隔符，停用词删除后位置仍保持原文编号。
+
+本次 token 总数 **956,647**，词干化前词形数 **23,871**，词干数 **14,986**。
+
+截图：[01 数据准备](evidence/screenshots/01.png)。源文本可以自行打开抽查；如 Hamlet 为 doc_id=29，Julius Caesar 为 doc_id=30。
+
+### 2. 环境、编译和原始命令
+
+环境：Windows-11-10.0.26200-SP0；gcc (MinGW-W64 x86_64-ucrt-posix-seh, built by Brecht Sanders, r6) 15.2.0；Python 3.12。
+
+```powershell
+gcc -std=c99 -O2 -Wall -Wextra -Wpedantic code/index_gen.c code/stem.c -lm -o bin/index_gen.exe
+gcc -std=c99 -O2 -Wall -Wextra -Wpedantic code/query.c code/stem.c -lm -o bin/query.exe
 ```
 
-后果是索引里存 `becau`、查询侧算出 `becaus`：**查不到，而且 `index.bin` 从里到外完全合法**。
-因此 `code/index_gen.c` 的切词段明确规定：切词层只做 `isalnum` 连续段切分 + `tolower`，
-词干化统一交给 `stemword()`；入库的是词干，`--dump-tokens` 写出的则是**转小写后的原形**。
+实际脚本还编译 `stem_list`、`roundtrip` 和 `bonus_probe`，均零告警。建索引需显式传入所有语料文件；通配符展开由测试脚本负责。每个 θ 在不同目录运行，独立保存索引和 stoplist；Windows 覆盖已有索引问题已修复并回归验证。
 
-## 3. Part 1：词频统计与停用词识别
+`query` 从当前工作目录读取 `index.bin` 和 `stoplist.txt`，每次覆盖 `output.txt`。本次脚本把每次查询结果另存为 `results/queries/*.txt`。完整参数、cwd、退出码、时间、峰值 working set 在 `results/logs/*.run.json`，stdout / stderr 原文同名保存。
 
-### 3.1 "noisy 与 interesting 的线画在哪"
+```text
+pass 1 (statistics): 42 documents, 956647 words, 0 stop-word words skipped, 0 positions dropped
+part 1: N=42 documents, V=14986 stems, 956647 positions, 1780 stop words (df/N > 0.500)
+pass 2 (index generation): 42 documents, 956647 words, 825511 stop-word words skipped, 0 positions dropped
+wrote 13206 terms to index.bin and 1780 stop words to stoplist.txt
+```
 
-题面这句话本身就是要求：必须给出**可复现的量化准则**并讨论它的代价。三种候选：
+θ=0.5：索引 **663,434 B（647.88 KiB）**，保留 **131,136** 个位置，比例 **13.71%**，两遍扫描均 **0 positions dropped**。
 
-| 准则 | 定义 | 优点 | 代价 |
+截图：[02 编译、词频与建索引](evidence/screenshots/02.png)。完整词频表：`results/word_statistics.csv`，按 cf 降序，包括每个词干的 cf、df、df/N。
+
+### 3. 正确性测试方法与结果
+
+测试参考答案不靠“查询输出看起来合理”：Python 对全部文本独立用正则分词，核对 C 的全部 956,647 条 token，然后按词干聚合 `(doc_id,pos)`，统计 cf/df，独立推导 stoplist，并按二进制格式解析 `index.bin`。对五组 θ，文档表、词条集合和全部位置列表逐项相等。词干处理复用原 C `stem_list`，因此验证范围不包含 Porter 算法本身的独立正确性。
+
+进一步测试：同词大小写、单词位置列表、AND 文档交集、短语连续位置、停用词解释、τ 边界、空文档、尾部空文档、N=0 索引和损坏文件。重复构建与 load→save 往返均逐字节相同，θ=0.5 的 SHA-256 为：
+
+```text
+0e80dc9ee4c5b369966e36c07e94a49b40333a82ce1d90c47d8a86bd09348d69
+```
+
+修复前测试为 **67 PASS / 2 FAIL**；修复后为 **78 PASS / 0 FAIL**。前后检查数量不同，因为修复时增加了专门的回归与文档引用校验测试；不能把新增检查误写为“同一套测试增加了通过项”。
+
+| 查询 | 方式 | 命中文档数 | 位置/短语起点数 |
 | --- | --- | --- | --- |
-| A. 固定表 | 经典 ~300 个英文功能词 | 简单、可复现、与语料无关 | 语料相关噪声漏掉（莎士比亚里的 `thou` / `thee` / `hath` / `doth` 不在表里） |
-| B. 全局频次 cf | `cf / 总词次 > θ` | 不需要文档粒度统计 | 误杀"高频但有区分度"的词（某部剧里反复出现的角色名） |
-| **C. 文档频率 df** | `df / N > θ`，df = **含该词的文档数**（本实现） | 它衡量的正是"这个词能不能区分文档"，是 IR 的标准做法 | 需要一次全语料统计（因此要两遍扫描） |
+| hamlet | word | 1 | 470 |
+| HAMLET | word | 1 | 470 |
+| horatio | word | 1 | 158 |
+| antonio | word | 7 | 267 |
+| bassanio | word | 1 | 122 |
+| unicornzzzz | word | 0 | 0 |
+| the | word | 0 | 0 |
+| love | word | 0 | 0 |
+| antonio AND bassanio | AND | 1 | — |
+| hamlet AND horatio | AND | 1 | — |
+| hamlet AND unicornzzzz | AND | 0 | — |
+| et tu brute | phrase | 1 | 1 |
+| yorick horatio | phrase | 0 | 0 |
+| gallop apace | phrase | 1 | 1 |
+| to be or not to be | phrase | 0 | 0 |
 
-本实现取 **C**：`df/N` 接近 1 的词几乎出现在每一篇文档里，对"哪些文档含它"没有信息量，就是噪声；
-反过来，只在少数文档里出现的词才"能区分文档"。`df` 的统计复用建索引的插入入口，
-所以 `df/N` 的分子分母与索引里的 `Posting` 完全同源。
 
-### 3.2 产物
+截图：[03 对拍与最终结果](evidence/screenshots/03.png)。原始完整控制台：`results/extended_console.txt`；逐项判断在 `results/shakespeare_summary.json`。
 
-```console
-$ ./index_gen --count-only | head -12
-== Part 1: word count ==
-documents (N)      : 40
-distinct stems (V) : 7124
-position entries   : 161892
-theta              : 0.500  (df/N > theta -> stop word)
+### 4. 真实问题定位与修复痕迹
 
-== stop words: 422 / 7124 (5.9%) ==
-stem                         cf         df     df/N
-run                        9241         40   1.0000
-walk                       4509         40   1.0000
-...
-```
+#### 4.1 短语重排导致错查
 
-`stoplist.txt` 的表头同时记录 θ、N、V 与停用词条数，方便报告与复现（`query` 会读它做提示）。
+原 `run_phrase_query()` 把词数组按 tf 排序，然后继续用 `start+i` 检查相邻位置。这使数组顺序变成频率顺序，原短语顺序丢失。
 
-### 3.3 θ 的影响（实验）
+- 真实数据：`et tu brute` 修复前返回 0，独立枚举预期为 `(30,10014)`。
+- 最小输入：`alpha beta alpha alpha gamma`；`alpha` 比 `beta` 多，原排序变成 `beta alpha`，查询 `alpha beta` 错误返回起点 1，预期起点为 0。
+- 修复：保留词序，以最小 tf 的词下标 `anchor` 作锚点；候选起点为 `positions[anchor][a]-anchor`，仍按原下标 i 验证 `start+i`。
+- 复测：`et tu brute` 返回 doc 30 / pos 10014，`alpha beta` 返回 doc 0 / pos 0；反向、重复词、不命中短语回归均通过。
 
-| θ | stoplist 条数 | 索引词条数 | index.bin | 保留的位置条目 |
-| --- | --- | --- | --- | --- |
-| 0.3 | 733 | 6391 | 235.2 KB | 14.2% |
-| 0.4 | 532 | 6592 | 252.2 KB | 16.4% |
-| **0.5（默认）** | **422** | **6702** | **263.8 KB** | **18.1%** |
-| 0.6 | 340 | 6784 | 274.3 KB | 19.7% |
+#### 4.2 合法空文档被判为坏索引
 
-θ 越小 ⇒ 判为噪声的词越多 ⇒ 索引越小、查询越快，但 82% 的正文位置条目被丢弃（θ=0.5 时），
-**含停用词的短语会彻底查不到**（`"to be or not to be"` 的五个词全在 stoplist 里 → 0 命中）。
-这是 Part 2 的必然副作用，取舍见 6.3 与第 8 节。
+原加载器要求最大 posting 的 doc_id 等于文档表最后一个 ID。最后一篇文档为空或全是停用词时，不会有 posting，这个等式不成立。50 万个空逻辑文档的合法索引也因此被拒绝。
 
-## 4. Part 2：带词干化的倒排索引
+修复为逐组二分验证 posting 的 doc_id 确实属于文档表；允许文档没有索引词。尾部空文档、50 万空逻辑文档加载通过，posting 引用不存在的文档仍被拒绝。索引文件格式保持 v1。
 
-### 4.1 内存结构
+修复前源码和失败结果在 `evidence/before_fix/`；精确差异在 `evidence/source_changes.patch`。截图：[04 问题复现和修复](evidence/screenshots/04.png)。
 
-`djb2` 哈希（`hashsize` = 1000007 个桶）+ 链地址法；每个词干一个 `Posting`，
-挂一条按 `(doc_id, pos)` **升序**的 `Position` 链 —— `df`、求交、短语验证都依赖这个有序性。
-去重键是 `(词干, doc_id, pos)`。`sizeof(inverted_index) ≈ 7.6 MB`（桶数组嵌在结构体里），
-所以**必须堆分配**，放栈上会直接段错误。
+#### 4.3 文件输入和 Windows 重建索引
 
-### 4.2 文件格式（`index.bin` v1）
+原 `test.txt` 多词行说明是 AND，实际却把整行当一个短语单元。改为逐词构成查询单元；只有 `phrase:` 行作为短语。用 `alpha gamma`（文档中都有但不连续）、`phrase: alpha beta` 和单词行回归，均通过。`code/test.txt` 已补上真实查询样例。
 
-```
-头部 64 B：魔数 "PR1IDX"+两个 '\0'、u32 版本(=1)、u32 头部长度(=64)、
-           u64 文档数、u64 词条数、u64 位置条目总数、u64 docs/terms/postings 三段偏移
-docs 段：     文档数 × u32（doc_id 升序去重，给 df/N 提供 N）
-terms 段：    词条数 × { u32 df、u32 tf、u64 postings 偏移、u16 词干长度、词干字节 }，按词干升序
-postings 段： [doc 增量][该文档的位置数][位置增量 × 位置数] 重复 df 次，全部 LEB128
-```
+原 Windows CRT `rename()` 无法替换旧 `index.bin`，第二次构建失败。Windows 改用 `MoveFileExA(REPLACE_EXISTING | WRITE_THROUGH)`，POSIX 继续 `rename()`；同一目录连续重建后索引 SHA-256 相同。Linux 分支保持原实现，本次环境只实测 Windows。
 
-设计取舍：
+原 `tests/sweep.py` 未给 index_gen 传语料文件，且将位置行数当文档数；该入口现改为调用独立校验后的全集测试，再按去重文档数打印 θ/τ 表。原脚本保存在 `evidence/before_fix/sweep.py` 供过程对照。
 
-- **小端 + 定长、不 dump 结构体**：字节序、`int` 宽度、padding 都进不了文件；
-- **gap + LEB128**：相邻命中文档、同一文档内相邻位置的平均间隔都是 1 字节量级，这是"为什么用二进制"的答案；
-- **词条按词干升序**：输出与哈希桶顺序无关 ⇒ 同一份 `file.txt` 永远得到逐字节相同的 `index.bin`
-  （可复现、可 diff，也是往返测试 `cmp` 的基础）；
-- **`df` / `tf` 冗余存进词典**：既省掉查询侧重算，又能在加载时交叉校验。
+### 5. θ 与 τ 实验及分析
 
-### 4.3 完整性
+θ：建索引时剔除 `df/N > θ` 的词。τ：查询时对 `df/N > τ` 的已有索引词抑制完整结果列表。两者相等时均不触发删除/抑制。
 
-`index_load()` 会校验魔数、版本、头部长度、段偏移递增、各段不越界、词条数不超过
-"terms 段字节数 / 18"（防住被改坏的头部导致天文数字内存分配）、每个词条的 df / tf 与解出的
-组数 / 位置数一致、所有词条合计等于头部的位置总数、文件末尾无多余字节 —— 任何一项不符都返回 NULL。
-写侧则先写 `index.bin.tmp` 再 `rename()`（同目录原子替换），并检查 `index_save()` 返回值、
-`fclose()` 返回值与 `ferror()`，失败就删掉 `.tmp` 并报错退出：**绝不留下半截索引**。
-已知局限：v1 没有校验和，改坏一两个字节但结构仍自洽的文件会被接受（根治办法是把头部扩到
-72/80 字节加校验和字段并递增版本号，留作 v2）。
+| θ | 停用词干 | 索引词干 | 位置数 | 保留比例 | 索引 KiB | 建索引 s | 峰值 WS MiB |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 0.3 | 2933 | 12053 | 93336 | 9.76% | 511.62 | 40.227 | 42.94 |
+| 0.4 | 2321 | 12665 | 109105 | 11.40% | 573.63 | 41.521 | 42.94 |
+| 0.5 | 1780 | 13206 | 131136 | 13.71% | 647.88 | 42.968 | 42.96 |
+| 0.6 | 1447 | 13539 | 149267 | 15.60% | 705.16 | 48.544 | 42.92 |
+| 0.8 | 850 | 14136 | 198325 | 20.73% | 845.71 | 51.160 | 42.88 |
 
-## 5. Part 3：查询程序
 
-`./query` 加载 `index.bin` 后支持三种查询：
+θ 增大时，停用词减少，索引词条、保留位置和索引体积都增大。以默认 θ=0.5 为例，1,780 个词干仅占词表约 11.88%，却覆盖 86.29% 的出现位置；说明少数常见词占据大量文本。但 df/N 高并不一定语义无用，`love` 等内容词也可能被剔除，所以这种“noisy”划分是操作性判据，有精度/召回取舍。
 
-| 调用 | 语义 | 实现 |
+| τ | caesar（19/42） | antony（6/42） | hamlet（1/42） |
+| --- | --- | --- | --- |
+| 不设 | 19 | 6 | 1 |
+| 0.02 | 抑制（0） | 抑制（0） | 抑制（0） |
+| 0.1 | 抑制（0） | 抑制（0） | 1 |
+| 0.2 | 抑制（0） | 6 | 1 |
+| 0.3 | 抑制（0） | 6 | 1 |
+| 0.4 | 抑制（0） | 6 | 1 |
+| 0.5 | 19 | 6 | 1 |
+
+
+查询词使用原词形 `caesar`、`antony`、`hamlet`，不会对已词干化结果再词干化。`antony` 对应 `antoni`。表中数值为去重 doc_id 后展示的文档数：caesar 是 19 篇 / 602 个位置，不能写成 602 篇。
+
+τ=0.1 时 caesar 和 antony 被抑制，hamlet 仍展示；τ=0.2 时 antony 恢复；τ=0.5 时三者均展示。抑制不代表原文没有匹配；程序仍打印 df/tf。三个 `τ=df/N` 的边界查询均允许展示。
+
+`to be or not to be` 在原文中存在，但每个词都在 θ=0.5 stoplist 中，位置索引不再含这些词，所以默认短语查询返回 0。报告要把“原文出现次数”和“过滤后可检索次数”分开，不能将此结果当作语料缺失。
+
+截图：[05 阈值实验](evidence/screenshots/05.png)。CSV：`theta_results.csv`、`tau_results.csv`。
+
+测量限制：建索引时间是单次墙钟时间，部分实验运行时有其他测试活动；θ=0.5 初次构建额外写 token dump，其他 θ 没有。峰值内存为 Windows `PeakWorkingSetSize`（working set），10 ms 轮询读取；不是严格 RSS 上限或纯算法内存。性能数据只用于本机量级观察，不据小幅耗时差下结论。
+
+### 6. Bonus：原 C 实现实测
+
+题面是 **400,000,000 distinct words（不同词）**，不是 4 亿次重复出现。用重复词凑 4 亿 token 不能验证词典规模。
+
+#### 6.1 文档数与词典规模
+
+| 不同词干 V | 逻辑文档 N | 构建 s | 峰值 WS MiB | 磁盘 MiB | 加载并查询 s |
+| --- | --- | --- | --- | --- | --- |
+| 10000 | 10000 | 0.072 | 13.50 | 0.39 | 0.236 |
+| 100000 | 100000 | 0.301 | 25.27 | 3.99 | 2.024 |
+| 1000000 | 500000 | 2.554 | 140.71 | 38.12 | 20.031 |
+
+
+`bonus_probe.c` 直接调用现有 `index.h`；生成确定性已归一词干，每词一个位置，构建、保存，再由原 query 重启加载查询。最大档达到 **500,000 逻辑文档 / 1,000,000 不同词**，查询校验通过。它未经过文件枚举、原文 tokenization 或停用词统计，不能称为“50 万实体文件端到端测试”。
+
+另验证 500,000 个空逻辑 doc_id 的索引大小为 2,000,064 B，修复后可加载；这证明 doc_id 表达范围足够，不证明磁盘文件处理能力。
+
+#### 6.2 高频位置链退化
+
+| 同一词的 tf | 插入 CPU s | 相邻档倍率 |
 | --- | --- | --- |
-| `./query wevafi` | 单词 | 词干化后查表，打印 `df/N`、`tf` 与全部 `(doc, pos)` |
-| `./query wevafi zebra` | 多词 AND | 对各词的文档集合（升序数组）做 k 路求交 |
-| `./query "a b c"` | 短语 | 先求交得到候选文档，再用位置链验证 `pos, pos+1, pos+2...` 连续 |
+| 4000 | 0.011 | — |
+| 8000 | 0.042 | 3.82× |
+| 16000 | 0.174 | 4.14× |
+| 32000 | 0.707 | 4.06× |
+| 64000 | 3.629 | 5.13× |
 
-要点：
 
-- 求交时 **`k` 路指针每轮都严格前进**（锚点跳到一个不可能命中的位置之后要重新推进），否则会死循环；
-- 短语验证用 **tf 最小的词当锚点**：它的候选起始位置最少，验证代价最低；
-- 位置链本来就是按 `(doc, pos)` 升序的，所以"某文档内某词的位置数组"可以直接顺序取出，
-  连续性是**二分查找**判断的（`contains_int`）。
+位置链表每次从头寻找插入点；按升序插入一个词的 n 个位置，遍历数为 `0+1+…+(n−1)=n(n−1)/2`，时间为 O(n²)。本机多数倍增档接近 4 倍耗时，最大档受系统负载影响更大；`index_load` 复用同一插入入口，也有该退化。
 
-输出示例（`output.txt`）：
+#### 6.3 CLI 与文件偏移限制
 
+将 500,000 个文件名构成参数列表，字符串长度 7,500,117 字符；真实创建进程时被 Windows 拒绝，WinError 206。这是参数接口限制测试，失败发生在 C 程序启动之前，因此不需要创建实体文件。
+
+本机 `sizeof(long)=4`，`LONG_MAX=2,147,483,647`。索引虽在文件中存 u64 偏移，加载器却调用 `ftell/fseek` 并转成 long，不能可靠处理超过约 2 GiB 的索引。该结论来自类型探针和源代码，不是创建并测试了一个 2 GiB 文件。
+
+截图：[06 原 C 后端压力测试](evidence/screenshots/06.png)。完整 CSV 和 JSON：`bonus_results.csv`、`bonus_summary.json`。
+
+### 7. Bonus：外存原型补充验证
+
+新增独立 `bonus_disk_demo.py`，用磁盘 SQLite B-tree 保存词典和位置表。页缓存预算 8 MiB，每批最多 2,000 个位置；保存后关闭再打开，核验词条数、不同 doc_id 数、integrity_check、单词、连续短语和阈值抑制。
+
+| 逻辑文档 N | 不同词干 V | 构建 s | 进程峰值 WS MiB | 数据库 MiB | 检查 |
+| --- | --- | --- | --- | --- | --- |
+| 5000 | 10000 | 0.088 | 18.04 | 0.51 | PASS |
+| 50000 | 100000 | 0.681 | 23.74 | 5.09 | PASS |
+| 500000 | 1000000 | 6.507 | 28.77 | 51.42 | PASS |
+
+
+最大档查询最后一篇文档：单词命中 `(499999,1)`，两词短语命中 `(499999,0)`。测试通过。
+
+这只是“把词典和 postings 存盘”的可运行原型，**不是原 C 程序已实现 SPIMI，也不兼容原 index.bin**。它使用已归一合成词干、每词出现一次的分布；页缓存固定不代表整个进程内存严格恒定。上述实测支持有限工作内存方向，但未验证 4 亿不同词，也未验证 50 万实体文件或一般高频语料。大型数据库在工作目录 `work/`，交付保留代码、测量和原始日志，避免把临时压力数据当真实语料。
+
+截图：[07 外存原型](evidence/screenshots/07.png)。
+
+### 8. Bonus：4 亿不同词的条件估算与结论
+
+本机 `sizeof(Posting)=32`、`sizeof(Position)=16`。假设每个不同词至少一个位置、词干字符串平均含结束符 16 B，则仅 C 索引载荷约为：
+
+```text
+8,000,072 + 400,000,000 × (32 + 16 + 16)
+= 25,608,000,072 B
+≈ 25.608 GB ≈ 23.85 GiB
 ```
-# query 1: zolkim vireth qandel brusett nomin
-Found: zolkim  (df=2/40 = 0.050, tf=2)
-...
-Phrase [zolkim vireth qandel brusett nomin]: 2 match(es) in 2 document(s)
-Doc ID: 0, Positions: 10
-Doc ID: 3, Positions: 10
 
-# query 2: be
-Not found: be  (stop word: df=40/40 = 1.0000 > theta=0.5000, removed from the index in part 1)
+这是**条件估算**，不含 malloc 元数据、碎片、词频统计数组、排序数组和重复词位置，实际需求更大。原 v1 词典每条固定元数据为 18 B，4 亿条仅元数据就需 **7.2 GB**，尚未计词干和 postings；这已超出本机 long 文件偏移范围。固定 1,000,007 个哈希桶下，V/hashsize≈400，均匀散列时每桶平均约 400 个词，链式查找常数明显增大。
+
+因此回答题面“Will your program still work?”：**当前 C 内存后端不能直接支持完整 Bonus 规模。50 万 doc_id 可表示，但内存、位置链表构建、全量加载、命令行和 Windows 文件偏移限制都必须解决。**
+
+可扩展路线：
+
+1. 改为目录或文件清单输入，流式枚举，避免巨型 argv。
+2. 统计阶段也要分块：先输出词干/文档统计块，外部归并得到全局 df，之后再确定停用词。只对 pass 2 分块不够。
+3. 建索引用 SPIMI/BSBI 分块排序和多路外部归并；保留原文位置，生成 delta + varint postings。
+4. 磁盘词典使用 B-tree 或分块 SSTable；64-bit 文件偏移；查询按需读取目标词的 postings，避免一次加载完整词典与位置链。
+5. 高频查询可采用按需迭代、跳跃表、分页；如引入 top-K/BM25，应明确它改变了题目“返回全部 ID”的接口语义，不能直接用 top-K 代替完整正确性测试。
+6. 更大规模验证需继续按不同词数量递增，记录峰值内存、磁盘容量、归并次数、索引正确性和查询延迟。
+
+**已实测**：全集 42 文档，C 后端百万不同词 / 50 万逻辑文档，外存原型百万不同词，以及 CLI 失败与类型尺寸。**未实测**：4 亿不同词、50 万实体文件端到端输入。报告不可写成两者已全部跑过。
+
+截图：[08 规模估算](evidence/screenshots/08.png)。
+
+### 9. 复现与文件索引
+
+已附语料，无需重新下载。Windows 安装 gcc 和 Python 3 后，从本目录运行：
+
+```powershell
+.\run_lab.ps1 -PythonExe "你的Python路径\python.exe"
+## 复用已有索引，只重编译/对拍/查询；初始构建时间保留为首次实测值
+.\run_lab.ps1 -PythonExe "你的Python路径\python.exe" -ReuseIndexes
 ```
 
-## 6. Part 4：阈值实验
+完整重新构建约需数分钟；可复用模式不会再次运行五组全集建索引，仍重新验证索引内容和查询。脚本不依赖第三方 Python 包。`run_bonus.py` 外存数据写在工作目录，不递归删除任何目录。
 
-### 6.1 τ 的定义与行为
+直接复现查询：
 
-`df/N > τ` 的词判为 `too common`，走**硬阈值**：
-
+```powershell
+Set-Location .\results\shakespeare\theta_0.5
+& ..\..\..\bin\query.exe 'et tu brute'
+& ..\..\..\bin\query.exe antonio bassanio
+& ..\..\..\bin\query.exe --tau=0.1 caesar
+Get-Content .\output.txt
 ```
-Too common: wevafi  (df=18/40 = 0.450, tf=27, tau=0.200 -> 18 documents, result list suppressed)
-```
 
-即：报出命中文档数（这样"结果到底有多大"是可解释的），**但不打印文档列表**；
-在多词查询里该词被排除出交集（于是阈值对最终结果集的影响直接可见）。默认不设 τ。
+优先阅读本文件；浏览器记录入口 `evidence/index.html`；PNG 截图 `evidence/screenshots/01.png` 至 `08.png`。PNG 是真实浏览器对原始结果展示页的截图，**不是原生终端窗口截取**。生成展示页的脚本也已提供，可核对是否忠实于日志。
 
-### 6.2 实验结果（θ = 0.5，N = 40）
+写报告时建议采用“实验目的 → 数据/环境 → 方法和命令 → 实测表 → 原因分析 → 局限 → Bonus 结论”的顺序，引用对应图片、原始日志和源代码差异。`documentation.md` 是整合后的完整报告；此前的合成语料报告保存在 `evidence/before_fix/documentation.md`，不能与本次真实全集数字混用。
 
-三个查询词分别取"索引里确实存在"的高频 / 中频 / 极稀有词：
+## 参考资料
 
-| τ | 高频词 df/N=0.450 | 中频词 df/N=0.200 | 极稀有词 df/N=0.025 | 被拦下的查询 |
-| --- | --- | --- | --- | --- |
-| 不设 | 27 篇 | 11 篇 | 1 篇 | 0/3 |
-| 0.1 | 拦下 | 拦下 | 1 篇 | 2/3 |
-| 0.2 | 拦下 | 11 篇 | 1 篇 | 1/3 |
-| 0.3 | 拦下 | 11 篇 | 1 篇 | 1/3 |
-| 0.4 | 拦下 | 11 篇 | 1 篇 | 1/3 |
-
-### 6.3 分析
-
-1. **τ 的单调性**：τ 越小，被拦下的查询越多、平均结果集越小 —— 阈值就是把"结果集大到没有意义"
-   的查询挡在前面。
-2. **τ 的有效区间被 θ 限制**：`df/N > θ` 的词在 Part 2 就已经不在索引里了，查询侧根本看不到它们的
-   `df`，只会得到 `Not found`（甚至被提示成停用词）。所以真正可调的区间是 `(0, θ]`：
-   上表里 τ = 0.4 与 τ = 0.3 完全一样，因为 0.45 的高频词在 θ = 0.5 的索引里已经是"最高一档"。
-   **两个阈值必须一起讨论**，这也是"Part 4 要跑测试"而不是"拍一个数"的原因。
-3. **硬阈值的代价与替代**：硬阈值让提示可解释，但代价是**完全丢掉**该词的结果列表；
-   真实系统应当用软阈值 —— 返回 top-K 并按 tf-idf / BM25 排序（见第 9 节 Bonus 的 WAND / MaxScore）。
-4. **停用词与短语的冲突**：θ 越大（剔得越狠），短语查询的可用性越差。若要支持"含停用词的短语"，
-   要么对短语查询单独保留位置索引、要么把 stoplist 分成"索引期剔除"与"查询期过滤"两档。
-   本实现选择了诚实的做法：明确告诉用户这个词是 Part 1 剔除的停用词，而不是笼统的 `Not found`。
-
-## 7. 正确性验证
-
-测试入口 `code/tests/run_tests.sh`：在临时目录里编译、生成合成语料、跑完整流水线，
-当前 **21 项全部 PASS**（语料：40 篇 / 161,892 条三元组 / N=40 / V=7,124 / θ=0.5）。
-
-| 检查项 | 方法 | 结果 |
-| --- | --- | --- |
-| 编译 | 四个程序在 `-std=c99 -Wall -Wextra -Wpedantic` 下编译（交付源文件只有 `index_gen.c` / `query.c`） | 零告警 |
-| 切词口径 | `index_gen --dump-tokens` 的词表 vs `tr -cs 'A-Za-z0-9' '\n' \| tr A-Z a-z`；另对拍 stdin 输入 | 逐词一致（4,057 词） |
-| **索引内容（独立对拍）** | `tests/brute_check.py` 另按 `index.h` 规范（含 LEB128 解码）重写解析器，与"从 `file.txt` 暴力聚合"逐词条比较 | 词条集合 / df / tf / 完整位置链全等：6702 terms, 29296 positions |
-| **停用词确实未入索引** | 同上，要求索引 == 全部词条 − stoplist | 通过 |
-| 结构自洽 | 魔数 / 版本 / 段偏移递增 / terms 段长度 / 位置总数 / 文件末尾无多余字节 | 通过 |
-| **编解码往返** | `tests/roundtrip.c`：load → save → `cmp` | 逐字节相同 |
-| 短语查询 | 暴力枚举短语的 (doc, start) vs `query` 输出 | 一致（doc 0/3，pos 10） |
-| 损坏文件 | 截断 1 字节 / 版本号改 2 / 纯垃圾 | 全部被拒绝，`query` 非零退出 |
-| 边界 | 空文档（N=1、68 字节索引）可加载查询；手工构造的 N=0 空索引（64 字节）也能加载 | 通过 |
-| 阈值 τ | df/N 在 (0.15, 0.45] 的词在 τ=0.2 时必须被拦下 | 通过 |
-
-**已知未覆盖**：v1 无校验和（改坏一字节但结构自洽的文件会被接受，见 4.3）；
-增量更新（加/删一篇文档）未做；真实语料上的端到端未跑（语料未下载）。
-
-## 8. 性能与复杂度
-
-| 量 | 复杂度 / 实测 |
-| --- | --- |
-| 建索引 | 时间 O(总词次 + V log V)（V log V 来自 `index_save()` 的词条排序）；空间 O(V + 位置条目数) |
-| 单词查询 | 时间 O(df)（要用到全部位置）；只查文档时是 O(df) 的顺序扫描 |
-| 多词 AND | 时间 O(各词 df 之和)，升序数组的多路求交，无随机访问 |
-| 短语查询 | 时间 O(min(df) × 平均单文档位置数 × 二分查找)；用 tf 最小词当锚点 |
-| 落盘 / 加载 | `index.bin` 用 gap + LEB128，相邻增量通常 1 字节；加载是全量重建哈希表 |
-
-合成语料实测：`index_gen` 0.79 s（两遍扫描 + 两次建索引 + 落盘 263.8 KB），
-`query` 加载 + 一次查询 0.02 s；早期 88 万条三元组的样例上 `index_gen` 约 1.3 s、峰值内存约 39 MB。
-
-## 9. Bonus：50 万文件、4 亿不同词
-
-先把账算出来：词典（内存哈希表）4×10⁸ × ~20 B ≈ 8 GB（含装填因子 ~16 GB）；
-postings 裸存 10¹⁰ × 4 B = 40 GB，delta + varint 后 ≈ 10 GB；文档表 500,000 × 64 B ≈ 32 MB。
-⇒ 索引总量 10–20 GB，**必须落盘**，"全内存 + 定长数组"在这里不成立。
-
-会当场死掉的写法（早期骨架里的）：把 `FileNode *file_list[5000000]`（38.1 MB）嵌在词表结构里
-（每个词都要背 38 MB）、按"词数上限"开 `WordCount *words[400000000]`（2.98 GB）、
-每个词条独立 `malloc` 一块 postings（4 亿次分配 + 指针追逐）。
-
-能跑的做法（与第 4 节共用同一套接口，只换后端）：
-
-1. **SPIMI / BSBI 外部归并建索引**：内存上限由缓冲决定，与 V、N 无关；两遍扫描的结构与本实现一致
-   （只是 stoplist 必须先落盘，因为内存放不下整份索引）；
-2. **磁盘倒排 + delta/varint + 每 128 条一个 skip 指针**（求交时跳跃前进）；
-3. **排序块压缩词典 + 内存稀疏索引**（每块 64 个 term、块内前缀共享）：常驻内存从 ~10 GB 降到 ~100 MB；
-4. **查询用 top-K（WAND / MaxScore）而不是全量返回** —— 这正是第 6 节"查询阈值"在 Bonus 规模下的必然形态；
-5. `uint32_t` 装 docid / termid，文件偏移用 `uint64_t`，`mmap` + 顺序扫描；
-6. 若 10 GB 仍放不下，把 postings 按 term 哈希分片成 P 个桶，各自独立建索引 / 查询。
-
-分阶段路径：M1 单文件词计数（先对拍 `tr | sort | uniq -c`）→ M2 多文件 + docid 表 + df 统计 + θ 停用词
-→ M3 查询（单词 / 交集 / 短语）+ τ 实验 → M4 SPIMI + varint/skip + 块压缩词典，
-用脚本生成的 50 万小文件验证"峰值 RSS 与语料规模无关（曲线是平的）"。
-**现状：M1–M3 已实现并测试通过（本文第 3–7 节），M4 未实现。**
-
-## 10. 局限与后续工作
-
-1. **真实语料未跑**：所有实测都在合成语料上。合成语料是"人造 Zipf 分布"，量级与形态接近真实文本
-   （V=7,124、N=40、停用词占 V 的 5.9%），但不能替代真实语料上的结论；拿到
-   `shakespeare.mit.edu` 的文本后 `./index_gen <每部剧一个文件>` 一步即可复用全部实验。
-2. **文档粒度固定为"一个输入文件 = 一篇文档"**：想按幕 / 场切需要增加解析层（第 6.1 节的讨论）。
-3. **停用词使短语查询在含功能词时不可用**（6.3 第 4 点），需要更深设计才能同时满足题面两条要求。
-4. **无校验和**：想防住"结构自洽的篡改"需要 v2 格式。
-5. **增量更新未实现**：当前是全量重建（题面未要求）。
-6. **B+ 树 / 前缀压缩词典**只在 Bonus 讨论里，未落地。
-
-## 11. 参考
-
-- 题目原文：`image.png`（MIT 6.006 风格课后题，作者陈越，单位浙江大学）。
-- Porter, M. F. *An algorithm for suffix stripping*, Program, 1980（`code/stem.c` 的实现依据；
-  上游对照 `stmr.c` / `stmr.h`）。
-- Manning, Raghavan, Schütze. *Introduction to Information Retrieval*（第 1–2 章：倒排索引、df 与停用词；
-  第 4 章：gap 编码与变长编码；第 5 章：索引压缩；第 7 章：top-K 检索）。
-- 题面允许 *"download the functions for handling stop words and stemming from the Internet"*，
-  本实现的词干模块来自公开 Porter 实现，停用词识别是自己按 `df/N` 准则算出来的（语料相关，不能硬编码）。
+1. 题目截图：image.png，陈越，浙江大学。
+2. MIT The Complete Works of William Shakespeare：https://shakespeare.mit.edu/；公开网站镜像：https://github.com/TheMITTech/shakespeare。
+3. Martin Porter, An algorithm for suffix stripping, Program, 1980。C 实现引用：https://github.com/wooorm/stmr.c（项目 stem.c 中保留来源）。
+4. Manning, Raghavan, Schütze, Introduction to Information Retrieval，倒排索引和索引构建章节：https://nlp.stanford.edu/IR-book/。
+5. SQLite 官方文档，cache_size 与 temp_store：https://www.sqlite.org/pragma.html；用于独立 Bonus 外存原型。
+6. 当前源码基线和完整测量见 evidence/repository_baseline.json、results/*.json。4 亿词规模没有实跑，相关数字均为条件估算或格式推导。

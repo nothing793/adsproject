@@ -1,0 +1,16 @@
+{
+  "command": [
+    "C:\\Users\\liangji789\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe",
+    "C:\\Users\\liangji789\\Documents\\Codex\\2026-10-02\\https-github-com-nothing793-nothing793-1\\outputs\\pr1\\code\\tests\\bonus_disk_demo.py",
+    "--docs",
+    "50000",
+    "--database",
+    "C:\\Users\\liangji789\\Documents\\Codex\\2026-10-02\\https-github-com-nothing793-nothing793-1\\work\\disk_demo_45577c4d_50000\\index.sqlite"
+  ],
+  "cwd": "C:\\Users\\liangji789\\Documents\\Codex\\2026-10-02\\https-github-com-nothing793-nothing793-1\\outputs\\pr1",
+  "exit_code": 0,
+  "seconds": 0.801722,
+  "peak_working_set_bytes": 24895488,
+  "timeout": false,
+  "memory_method": "GetProcessMemoryInfo.PeakWorkingSetSize (10 ms polling)"
+}

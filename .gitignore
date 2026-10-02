@@ -1,0 +1,16 @@
+# Generated program binaries / large experiment scratch
+pr1/bin/
+pr1/code/*.exe
+pr1/code/index_gen
+pr1/code/query
+**/__pycache__/
+**/*.pyc
+**/index.bin
+**/roundtrip.bin
+**/index.bin.tmp
+**/tokens.txt
+**/output.txt
+pr1/results/bonus/
+pr1/results/edge_cases/
+work/
+*.sqlite

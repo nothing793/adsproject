@@ -1,0 +1,4 @@
+# query 1: gamma alpha
+Found: gamma  (df=1/1 = 1.000, tf=1)
+Found: alpha  (df=1/1 = 1.000, tf=3)
+Phrase [gamma alpha]: 0 match(es) in 0 document(s)

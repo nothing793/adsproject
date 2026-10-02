@@ -1,0 +1,30 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>发现问题 → 最小复现 → 修复验证</title><style>body{margin:0;background:#f2f5f7;color:#152534;font:18px/1.6 "Microsoft YaHei",sans-serif}
+    main{max-width:1320px;margin:36px auto;background:#fff;padding:32px 38px;border:1px solid #ccd5dd;border-radius:10px}
+    h1{font-size:32px;line-height:1.3;margin:12px 0 20px}h2{font-size:24px}h3{font-size:19px;margin-bottom:10px}
+    .tag{color:#17654a;font-weight:700}.note{background:#edf4ff;border-left:5px solid #376aa7;padding:14px 18px;margin:18px 0}
+    .warn{background:#fff4dc;border-left:5px solid #a87616;padding:14px 18px;margin:18px 0}
+    pre{background:#152534;color:#e9f1f7;border-radius:6px;padding:18px;font:16px/1.5 Consolas,"Microsoft YaHei",monospace;white-space:pre-wrap;overflow-wrap:anywhere}
+    table{width:100%;border-collapse:collapse;font-size:17px;margin:20px 0}th,td{text-align:left;border-bottom:1px solid #d9e0e5;padding:9px 12px}th{background:#eaf0f5}
+    a{color:#225d94}.footer{font-size:14px;color:#586777;margin-top:24px}.two{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+    </style><main><div class="tag">ADS PR1 · 实验记录 04</div><h1>发现问题 → 最小复现 → 修复验证</h1><p>原程序按 tf 排序短语词数组，随后仍用 start+i 验证位置，改变了短语含义。修复：保持词序，仅选择 anchor 下标，起点 = anchor 位置 − anchor 下标。</p><div class="two"><h3>修复前：真实莎士比亚短语</h3><pre># query 1: et tu brute
+Found: et  (df=9/42 = 0.214, tf=36)
+Found: tu  (df=3/42 = 0.071, tf=7)
+Found: brute  (df=2/42 = 0.048, tf=2)
+Phrase [et tu brute]: 0 match(es) in 0 document(s)
+</pre><h3>修复后：同一索引、同一查询</h3><pre># query 1: et tu brute
+Found: et  (df=9/42 = 0.214, tf=36)
+Found: tu  (df=3/42 = 0.071, tf=7)
+Found: brute  (df=2/42 = 0.048, tf=2)
+Phrase [et tu brute]: 1 match(es) in 1 document(s)
+Doc ID: 30, Positions: 10014
+</pre></div><div class="two"><h3>修复前：alpha beta 原文起点应为 0</h3><pre># query 1: alpha beta
+Found: alpha  (df=1/1 = 1.000, tf=3)
+Found: beta  (df=1/1 = 1.000, tf=1)
+Phrase [alpha beta]: 1 match(es) in 1 document(s)
+Doc ID: 0, Positions: 1
+</pre><h3>修复后：恢复正确起点</h3><pre># query 1: alpha beta
+Found: alpha  (df=1/1 = 1.000, tf=3)
+Found: beta  (df=1/1 = 1.000, tf=1)
+Phrase [alpha beta]: 1 match(es) in 1 document(s)
+Doc ID: 0, Positions: 0
+</pre></div><div class="note">另一问题：最后一篇文档没有 postings 时被拒绝。改为逐组校验 posting doc_id 属于文档表，允许空文档和全停用词文档。修复前后差异见 source_changes.patch。</div><div class="footer">真实测试日志展示页 · 截图由浏览器实拍 · 非终端原屏截取。原始数据与命令见 results/logs/*.run.json、*.txt。</div></main></html>

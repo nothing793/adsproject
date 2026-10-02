@@ -1,0 +1,896 @@
+{
+  "environment": {
+    "platform": "Windows-11-10.0.26200-SP0",
+    "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+    "gcc": "gcc (MinGW-W64 x86_64-ucrt-posix-seh, built by Brecht Sanders, r6) 15.2.0"
+  },
+  "corpus": {
+    "documents": 42,
+    "plays": 37,
+    "poetry": 5,
+    "sonnets": 154,
+    "tokens": 956647,
+    "raw_word_types": 23871,
+    "stems": 14986,
+    "source_commit": "5d36a46145236b406eb37643db4e5cefcb351f3a",
+    "original_reference_commit": "3e6a56990661e8a7f7db92e899f87ff379b10431",
+    "mirror_commit": "6b82db852c7322dd33e95db347f0ddfc812c6409"
+  },
+  "theta": [
+    {
+      "theta": 0.3,
+      "documents": 42,
+      "raw_stems": 14986,
+      "stop_words": 2933,
+      "indexed_stems": 12053,
+      "positions": 93336,
+      "retained_fraction": 0.09756576877364379,
+      "index_bytes": 523904,
+      "seconds": 40.227265,
+      "peak_working_set_bytes": 45023232
+    },
+    {
+      "theta": 0.4,
+      "documents": 42,
+      "raw_stems": 14986,
+      "stop_words": 2321,
+      "indexed_stems": 12665,
+      "positions": 109105,
+      "retained_fraction": 0.11404938289672158,
+      "index_bytes": 587400,
+      "seconds": 41.520509,
+      "peak_working_set_bytes": 45023232
+    },
+    {
+      "theta": 0.5,
+      "documents": 42,
+      "raw_stems": 14986,
+      "stop_words": 1780,
+      "indexed_stems": 13206,
+      "positions": 131136,
+      "retained_fraction": 0.13707877618390066,
+      "index_bytes": 663434,
+      "seconds": 42.968321,
+      "peak_working_set_bytes": 45051904
+    },
+    {
+      "theta": 0.6,
+      "documents": 42,
+      "raw_stems": 14986,
+      "stop_words": 1447,
+      "indexed_stems": 13539,
+      "positions": 149267,
+      "retained_fraction": 0.15603143061129132,
+      "index_bytes": 722087,
+      "seconds": 48.543798,
+      "peak_working_set_bytes": 45002752
+    },
+    {
+      "theta": 0.8,
+      "documents": 42,
+      "raw_stems": 14986,
+      "stop_words": 850,
+      "indexed_stems": 14136,
+      "positions": 198325,
+      "retained_fraction": 0.20731262419680405,
+      "index_bytes": 866009,
+      "seconds": 51.159519,
+      "peak_working_set_bytes": 44957696
+    }
+  ],
+  "selected_query_words": [
+    {
+      "level": "high",
+      "word": "caesar",
+      "stem": "caesar",
+      "cf": 602,
+      "df": 19,
+      "ratio": 0.4523809523809524
+    },
+    {
+      "level": "mid",
+      "word": "antony",
+      "stem": "antoni",
+      "cf": 513,
+      "df": 6,
+      "ratio": 0.14285714285714285
+    },
+    {
+      "level": "rare",
+      "word": "hamlet",
+      "stem": "hamlet",
+      "cf": 470,
+      "df": 1,
+      "ratio": 0.023809523809523808
+    }
+  ],
+  "tau": [
+    {
+      "tau": null,
+      "level": "high",
+      "word": "caesar",
+      "stem": "caesar",
+      "cf": 602,
+      "df": 19,
+      "ratio": 0.4523809523809524,
+      "blocked": false,
+      "displayed_documents": 19,
+      "displayed_positions": 602,
+      "seconds": 0.334254
+    },
+    {
+      "tau": null,
+      "level": "mid",
+      "word": "antony",
+      "stem": "antoni",
+      "cf": 513,
+      "df": 6,
+      "ratio": 0.14285714285714285,
+      "blocked": false,
+      "displayed_documents": 6,
+      "displayed_positions": 513,
+      "seconds": 0.323204
+    },
+    {
+      "tau": null,
+      "level": "rare",
+      "word": "hamlet",
+      "stem": "hamlet",
+      "cf": 470,
+      "df": 1,
+      "ratio": 0.023809523809523808,
+      "blocked": false,
+      "displayed_documents": 1,
+      "displayed_positions": 470,
+      "seconds": 0.321752
+    },
+    {
+      "tau": 0.02,
+      "level": "high",
+      "word": "caesar",
+      "stem": "caesar",
+      "cf": 602,
+      "df": 19,
+      "ratio": 0.4523809523809524,
+      "blocked": true,
+      "displayed_documents": 0,
+      "displayed_positions": 0,
+      "seconds": 0.325568
+    },
+    {
+      "tau": 0.02,
+      "level": "mid",
+      "word": "antony",
+      "stem": "antoni",
+      "cf": 513,
+      "df": 6,
+      "ratio": 0.14285714285714285,
+      "blocked": true,
+      "displayed_documents": 0,
+      "displayed_positions": 0,
+      "seconds": 0.31613
+    },
+    {
+      "tau": 0.02,
+      "level": "rare",
+      "word": "hamlet",
+      "stem": "hamlet",
+      "cf": 470,
+      "df": 1,
+      "ratio": 0.023809523809523808,
+      "blocked": true,
+      "displayed_documents": 0,
+      "displayed_positions": 0,
+      "seconds": 0.323589
+    },
+    {
+      "tau": 0.1,
+      "level": "high",
+      "word": "caesar",
+      "stem": "caesar",
+      "cf": 602,
+      "df": 19,
+      "ratio": 0.4523809523809524,
+      "blocked": true,
+      "displayed_documents": 0,
+      "displayed_positions": 0,
+      "seconds": 0.325879
+    },
+    {
+      "tau": 0.1,
+      "level": "mid",
+      "word": "antony",
+      "stem": "antoni",
+      "cf": 513,
+      "df": 6,
+      "ratio": 0.14285714285714285,
+      "blocked": true,
+      "displayed_documents": 0,
+      "displayed_positions": 0,
+      "seconds": 0.327729
+    },
+    {
+      "tau": 0.1,
+      "level": "rare",
+      "word": "hamlet",
+      "stem": "hamlet",
+      "cf": 470,
+      "df": 1,
+      "ratio": 0.023809523809523808,
+      "blocked": false,
+      "displayed_documents": 1,
+      "displayed_positions": 470,
+      "seconds": 0.317543
+    },
+    {
+      "tau": 0.2,
+      "level": "high",
+      "word": "caesar",
+      "stem": "caesar",
+      "cf": 602,
+      "df": 19,
+      "ratio": 0.4523809523809524,
+      "blocked": true,
+      "displayed_documents": 0,
+      "displayed_positions": 0,
+      "seconds": 0.327919
+    },
+    {
+      "tau": 0.2,
+      "level": "mid",
+      "word": "antony",
+      "stem": "antoni",
+      "cf": 513,
+      "df": 6,
+      "ratio": 0.14285714285714285,
+      "blocked": false,
+      "displayed_documents": 6,
+      "displayed_positions": 513,
+      "seconds": 0.327076
+    },
+    {
+      "tau": 0.2,
+      "level": "rare",
+      "word": "hamlet",
+      "stem": "hamlet",
+      "cf": 470,
+      "df": 1,
+      "ratio": 0.023809523809523808,
+      "blocked": false,
+      "displayed_documents": 1,
+      "displayed_positions": 470,
+      "seconds": 0.326961
+    },
+    {
+      "tau": 0.3,
+      "level": "high",
+      "word": "caesar",
+      "stem": "caesar",
+      "cf": 602,
+      "df": 19,
+      "ratio": 0.4523809523809524,
+      "blocked": true,
+      "displayed_documents": 0,
+      "displayed_positions": 0,
+      "seconds": 0.327176
+    },
+    {
+      "tau": 0.3,
+      "level": "mid",
+      "word": "antony",
+      "stem": "antoni",
+      "cf": 513,
+      "df": 6,
+      "ratio": 0.14285714285714285,
+      "blocked": false,
+      "displayed_documents": 6,
+      "displayed_positions": 513,
+      "seconds": 0.31801
+    },
+    {
+      "tau": 0.3,
+      "level": "rare",
+      "word": "hamlet",
+      "stem": "hamlet",
+      "cf": 470,
+      "df": 1,
+      "ratio": 0.023809523809523808,
+      "blocked": false,
+      "displayed_documents": 1,
+      "displayed_positions": 470,
+      "seconds": 0.32737
+    },
+    {
+      "tau": 0.4,
+      "level": "high",
+      "word": "caesar",
+      "stem": "caesar",
+      "cf": 602,
+      "df": 19,
+      "ratio": 0.4523809523809524,
+      "blocked": true,
+      "displayed_documents": 0,
+      "displayed_positions": 0,
+      "seconds": 0.325271
+    },
+    {
+      "tau": 0.4,
+      "level": "mid",
+      "word": "antony",
+      "stem": "antoni",
+      "cf": 513,
+      "df": 6,
+      "ratio": 0.14285714285714285,
+      "blocked": false,
+      "displayed_documents": 6,
+      "displayed_positions": 513,
+      "seconds": 0.322782
+    },
+    {
+      "tau": 0.4,
+      "level": "rare",
+      "word": "hamlet",
+      "stem": "hamlet",
+      "cf": 470,
+      "df": 1,
+      "ratio": 0.023809523809523808,
+      "blocked": false,
+      "displayed_documents": 1,
+      "displayed_positions": 470,
+      "seconds": 0.326353
+    },
+    {
+      "tau": 0.5,
+      "level": "high",
+      "word": "caesar",
+      "stem": "caesar",
+      "cf": 602,
+      "df": 19,
+      "ratio": 0.4523809523809524,
+      "blocked": false,
+      "displayed_documents": 19,
+      "displayed_positions": 602,
+      "seconds": 0.314065
+    },
+    {
+      "tau": 0.5,
+      "level": "mid",
+      "word": "antony",
+      "stem": "antoni",
+      "cf": 513,
+      "df": 6,
+      "ratio": 0.14285714285714285,
+      "blocked": false,
+      "displayed_documents": 6,
+      "displayed_positions": 513,
+      "seconds": 0.320932
+    },
+    {
+      "tau": 0.5,
+      "level": "rare",
+      "word": "hamlet",
+      "stem": "hamlet",
+      "cf": 470,
+      "df": 1,
+      "ratio": 0.023809523809523808,
+      "blocked": false,
+      "displayed_documents": 1,
+      "displayed_positions": 470,
+      "seconds": 0.324325
+    }
+  ],
+  "queries": [
+    {
+      "query": "hamlet",
+      "kind": "word",
+      "documents": 1,
+      "positions": 470,
+      "seconds": 0.346088
+    },
+    {
+      "query": "HAMLET",
+      "kind": "word",
+      "documents": 1,
+      "positions": 470,
+      "seconds": 0.338884
+    },
+    {
+      "query": "horatio",
+      "kind": "word",
+      "documents": 1,
+      "positions": 158,
+      "seconds": 0.328677
+    },
+    {
+      "query": "antonio",
+      "kind": "word",
+      "documents": 7,
+      "positions": 267,
+      "seconds": 0.332632
+    },
+    {
+      "query": "bassanio",
+      "kind": "word",
+      "documents": 1,
+      "positions": 122,
+      "seconds": 0.340559
+    },
+    {
+      "query": "unicornzzzz",
+      "kind": "word",
+      "documents": 0,
+      "positions": 0,
+      "seconds": 0.326655
+    },
+    {
+      "query": "the",
+      "kind": "word",
+      "documents": 0,
+      "positions": 0,
+      "seconds": 0.335888
+    },
+    {
+      "query": "love",
+      "kind": "word",
+      "documents": 0,
+      "positions": 0,
+      "seconds": 0.327128
+    },
+    {
+      "query": "antonio AND bassanio",
+      "kind": "AND",
+      "documents": 1
+    },
+    {
+      "query": "hamlet AND horatio",
+      "kind": "AND",
+      "documents": 1
+    },
+    {
+      "query": "hamlet AND unicornzzzz",
+      "kind": "AND",
+      "documents": 0
+    },
+    {
+      "query": "et tu brute",
+      "kind": "phrase",
+      "raw_matches": 1,
+      "all_terms_indexed": true,
+      "documents": 1,
+      "positions": 1,
+      "expected_positions": [
+        [
+          30,
+          10014
+        ]
+      ]
+    },
+    {
+      "query": "yorick horatio",
+      "kind": "phrase",
+      "raw_matches": 0,
+      "all_terms_indexed": true,
+      "documents": 0,
+      "positions": 0,
+      "expected_positions": []
+    },
+    {
+      "query": "gallop apace",
+      "kind": "phrase",
+      "raw_matches": 1,
+      "all_terms_indexed": true,
+      "documents": 1,
+      "positions": 1,
+      "expected_positions": [
+        [
+          34,
+          13905
+        ]
+      ]
+    },
+    {
+      "query": "to be or not to be",
+      "kind": "phrase",
+      "raw_matches": 1,
+      "all_terms_indexed": false,
+      "documents": 0,
+      "positions": 0,
+      "expected_positions": []
+    }
+  ],
+  "checks": [
+    {
+      "name": "compile index_gen with no warnings",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "compile query with no warnings",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "compile stem_list with no warnings",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "compile roundtrip with no warnings",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "complete MIT catalogue",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "all raw tokens match independent ASCII regex",
+      "passed": true,
+      "detail": "956647 tokens"
+    },
+    {
+      "name": "theta=0.3: exact term/doc/position equality",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "theta=0.3: stoplist matches strict df/N threshold",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "theta=0.3: zero dropped positions",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "theta=0.4: exact term/doc/position equality",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "theta=0.4: stoplist matches strict df/N threshold",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "theta=0.4: zero dropped positions",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "theta=0.5: exact term/doc/position equality",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "theta=0.5: stoplist matches strict df/N threshold",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "theta=0.5: zero dropped positions",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "theta=0.6: exact term/doc/position equality",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "theta=0.6: stoplist matches strict df/N threshold",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "theta=0.6: zero dropped positions",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "theta=0.8: exact term/doc/position equality",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "theta=0.8: stoplist matches strict df/N threshold",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "theta=0.8: zero dropped positions",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "repeated full build is byte-identical",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "C load/save roundtrip is byte-identical",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "word query hamlet",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "word query HAMLET",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "word query horatio",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "word query antonio",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "word query bassanio",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "word query unicornzzzz",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "word query the",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "word query love",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "AND ['antonio', 'bassanio']",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "AND ['hamlet', 'horatio']",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "AND ['hamlet', 'unicornzzzz']",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "phrase et tu brute",
+      "passed": true,
+      "detail": "raw=1; index=1"
+    },
+    {
+      "name": "phrase yorick horatio",
+      "passed": true,
+      "detail": "raw=0; index=0"
+    },
+    {
+      "name": "phrase gallop apace",
+      "passed": true,
+      "detail": "raw=1; index=1"
+    },
+    {
+      "name": "phrase to be or not to be",
+      "passed": true,
+      "detail": "raw=1; index=0"
+    },
+    {
+      "name": "tau=None caesar",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "tau=None antony",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "tau=None hamlet",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "tau=0.02 caesar",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "tau=0.02 antony",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "tau=0.02 hamlet",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "tau=0.1 caesar",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "tau=0.1 antony",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "tau=0.1 hamlet",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "tau=0.2 caesar",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "tau=0.2 antony",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "tau=0.2 hamlet",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "tau=0.3 caesar",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "tau=0.3 antony",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "tau=0.3 hamlet",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "tau=0.4 caesar",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "tau=0.4 antony",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "tau=0.4 hamlet",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "tau=0.5 caesar",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "tau=0.5 antony",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "tau=0.5 hamlet",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "tau equality is allowed caesar",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "tau equality is allowed antony",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "tau equality is allowed hamlet",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "corruption rejected truncated",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "corruption rejected wrong_version",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "corruption rejected garbage",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "corruption rejected trailing",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "empty document stays in N",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "zero-document header can load",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "phrase order regression alpha beta",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "test.txt multiple words mean AND",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "test.txt phrase prefix preserves order",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "test.txt processes all lines",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "rebuilding replaces existing index on Windows",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "phrase regression beta alpha",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "phrase regression alpha alpha",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "phrase regression gamma alpha",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "trailing empty document is loadable",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "posting referencing absent document is rejected",
+      "passed": true,
+      "detail": ""
+    }
+  ],
+  "passed": 78,
+  "failed": 0,
+  "index_sha256": "0e80dc9ee4c5b369966e36c07e94a49b40333a82ce1d90c47d8a86bd09348d69"
+}

@@ -314,15 +314,14 @@ static int run_word_query(query_term *terms, int n, int *docs)
  * 返回 -1 = 内存不足。 */
 static int run_phrase_query(query_term *terms, int n, int *docs, int *start_docs, int *starts)
 {
-    /* 用 tf 最小的词当锚点：候选起始位置最少，验证代价最低。会改动 terms 的顺序，
-     * 所以调用方若要按原顺序打印，得在那之前完成。 */
+    /* 用 tf 最小的词当锚点，但不能改变短语词序。
+     * anchor 位于原短语的第 anchor 个词，候选起点 = 命中位置 - anchor。 */
+    int anchor = 0;
     for (int i = 1; i < n; i++)
     {
-        for (int j = i; j > 0 && terms[j].tf < terms[j - 1].tf; j--)
+        if (terms[i].tf < terms[anchor].tf)
         {
-            query_term tmp = terms[j];
-            terms[j] = terms[j - 1];
-            terms[j - 1] = tmp;
+            anchor = i;
         }
     }
 
@@ -376,11 +375,15 @@ static int run_phrase_query(query_term *terms, int n, int *docs, int *start_docs
             {
                 counts_in_doc[i] = posting_positions(terms[i].posting, doc, positions[i]);
             }
-            for (int a = 0; a < counts_in_doc[0]; a++)
+            for (int a = 0; a < counts_in_doc[anchor]; a++)
             {
-                int start = positions[0][a];
+                int start = positions[anchor][a] - anchor;
+                if (start < 0)
+                {
+                    continue;
+                }
                 int ok = 1;
-                for (int i = 1; i < n; i++)
+                for (int i = 0; i < n; i++)
                 {
                     if (!contains_int(positions[i], counts_in_doc[i], start + i))
                     {
@@ -769,7 +772,7 @@ int main(int argc, char *argv[])
             {
                 continue;
             }
-            char *line_units[2];
+            char *line_units[MAX_UNITS];
             int n = 0;
             if (strncmp(text, "phrase:", 7) == 0)
             {
@@ -777,7 +780,21 @@ int main(int argc, char *argv[])
             }
             else if (strpbrk(text, " \t"))
             {
-                line_units[n++] = text;   /* 多个词 = AND（引号在文件里不需要） */
+                /* 每个词一个单元，才会走 AND；整行作为一个单元会误走短语。 */
+                for (char *tok = strtok(text, " \t"); tok; tok = strtok(NULL, " \t"))
+                {
+                    if (n >= MAX_UNITS)
+                    {
+                        fprintf(stderr, "too many query units in test.txt (max %d)\n", MAX_UNITS);
+                        failed = 1;
+                        break;
+                    }
+                    line_units[n++] = tok;
+                }
+                if (failed)
+                {
+                    break;
+                }
             }
             else
             {

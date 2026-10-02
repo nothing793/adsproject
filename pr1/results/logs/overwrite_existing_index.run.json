@@ -1,0 +1,13 @@
+{
+  "command": [
+    "C:\\Users\\liangji789\\Documents\\Codex\\2026-10-02\\https-github-com-nothing793-nothing793-1\\outputs\\pr1\\bin\\index_gen.exe",
+    "--theta=1",
+    "C:\\Users\\liangji789\\Documents\\Codex\\2026-10-02\\https-github-com-nothing793-nothing793-1\\outputs\\pr1\\results\\edge_cases\\phrase_order\\a.txt"
+  ],
+  "cwd": "C:\\Users\\liangji789\\Documents\\Codex\\2026-10-02\\https-github-com-nothing793-nothing793-1\\outputs\\pr1\\results\\edge_cases\\phrase_order",
+  "exit_code": 0,
+  "seconds": 0.041628,
+  "peak_working_set_bytes": 12771328,
+  "timeout": false,
+  "memory_method": "GetProcessMemoryInfo.PeakWorkingSetSize (10 ms polling)"
+}

@@ -1,0 +1,27 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>Bonus：固定缓存的外存原型验证</title><style>body{margin:0;background:#f2f5f7;color:#152534;font:18px/1.6 "Microsoft YaHei",sans-serif}
+    main{max-width:1320px;margin:36px auto;background:#fff;padding:32px 38px;border:1px solid #ccd5dd;border-radius:10px}
+    h1{font-size:32px;line-height:1.3;margin:12px 0 20px}h2{font-size:24px}h3{font-size:19px;margin-bottom:10px}
+    .tag{color:#17654a;font-weight:700}.note{background:#edf4ff;border-left:5px solid #376aa7;padding:14px 18px;margin:18px 0}
+    .warn{background:#fff4dc;border-left:5px solid #a87616;padding:14px 18px;margin:18px 0}
+    pre{background:#152534;color:#e9f1f7;border-radius:6px;padding:18px;font:16px/1.5 Consolas,"Microsoft YaHei",monospace;white-space:pre-wrap;overflow-wrap:anywhere}
+    table{width:100%;border-collapse:collapse;font-size:17px;margin:20px 0}th,td{text-align:left;border-bottom:1px solid #d9e0e5;padding:9px 12px}th{background:#eaf0f5}
+    a{color:#225d94}.footer{font-size:14px;color:#586777;margin-top:24px}.two{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+    </style><main><div class="tag">ADS PR1 · 实验记录 07</div><h1>Bonus：固定缓存的外存原型验证</h1><p>独立 Python + SQLite B-tree 演示程序；不属于原 C 后端，也不兼容其 index.bin。词典和位置表存盘，页缓存预算固定 8 MiB，每批最多 2,000 个位置。</p><table><thead><tr><th>逻辑文档 N</th><th>不同词干 V</th><th>构建 s</th><th>进程峰值 WS MiB</th><th>数据库 MiB</th><th>检查</th></tr></thead><tbody><tr><td>5000</td><td>10000</td><td>0.088</td><td>18.04</td><td>0.51</td><td>PASS</td></tr><tr><td>50000</td><td>100000</td><td>0.681</td><td>23.74</td><td>5.09</td><td>PASS</td></tr><tr><td>500000</td><td>1000000</td><td>6.507</td><td>28.77</td><td>51.42</td><td>PASS</td></tr></tbody></table><h3>最大档实际重启查询结果</h3><pre>{
+  &quot;logical_documents&quot;: 500000,
+  &quot;distinct_terms&quot;: 1000000,
+  &quot;word_hits&quot;: [
+    [
+      499999,
+      1
+    ]
+  ],
+  &quot;phrase_hits&quot;: [
+    [
+      499999,
+      0
+    ]
+  ],
+  &quot;threshold_suppressed&quot;: true,
+  &quot;integrity&quot;: &quot;ok&quot;,
+  &quot;passed&quot;: true
+}</pre><div class="warn">实测达到 50 万逻辑文档 / 100 万不同词。原型使用每词出现一次的合成分布；尚不能据此证明一般语料或 4 亿词规模。固定缓存预算也不等于整个进程严格恒定内存。</div><div class="footer">真实测试日志展示页 · 截图由浏览器实拍 · 非终端原屏截取。原始数据与命令见 results/logs/*.run.json、*.txt。</div></main></html>

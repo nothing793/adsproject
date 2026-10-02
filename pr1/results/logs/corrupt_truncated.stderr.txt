@@ -1,0 +1,1 @@
+Error: index.bin is not a valid index file (re-run ./index_gen)

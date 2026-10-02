@@ -1,0 +1,8 @@
+{
+  "requested_paths": 500000,
+  "physical_files_created": 0,
+  "command_chars": 7500117,
+  "rejected": true,
+  "winerror": 206,
+  "error": "[WinError 206] 文件名或扩展名太长。"
+}

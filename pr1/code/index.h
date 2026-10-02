@@ -659,7 +659,7 @@ static inline inverted_index *index_load(FILE *in)
     unsigned long version = 0, header_size = 0, word_len = 0;
     unsigned long long ndocs = 0, nterms = 0, npostings = 0;
     unsigned long long docs_off = 0, terms_off = 0, postings_off = 0;
-    unsigned long long max_doc = 0, decoded = 0, prev_end;
+    unsigned long long decoded = 0, prev_end;
     long long size = 0;
 
     if (file_size(in, &size) < 0 || size < IDX_HEADER)
@@ -780,6 +780,21 @@ static inline inverted_index *index_load(FILE *in)
             {
                 goto fail;   /* doc_id 必须严格递增 */
             }
+            /* 每个 posting 必须引用文档表里的 ID；文档本身可以没有索引词。
+             * 不能要求最大 posting doc_id 等于最后一篇文档：空文档/全停用词文档合法。 */
+            int lo = 0, hi = index->docs.count;
+            while (lo < hi)
+            {
+                int mid = lo + (hi - lo) / 2;
+                if (index->docs.ids[mid] < (int)doc)
+                    lo = mid + 1;
+                else
+                    hi = mid;
+            }
+            if (lo == index->docs.count || index->docs.ids[lo] != (int)doc)
+            {
+                goto fail;
+            }
             if (get_uvarint(in, &count) < 0 || count == 0 || total + count > tf)
             {
                 goto fail;
@@ -808,10 +823,6 @@ static inline inverted_index *index_load(FILE *in)
         {
             goto fail;   /* 词典里的 tf 与实际位置数不符 */
         }
-        if (df > 0 && doc > max_doc)
-        {
-            max_doc = doc;
-        }
         decoded += total;
 
         /* 这一段 postings 到此结束：记下结束位置，下一段的偏移必须 ≥ 它（不许重叠），
@@ -833,8 +844,7 @@ static inline inverted_index *index_load(FILE *in)
     {
         goto fail;   /* postings 段之后不该有多余字节 */
     }
-    if (ndocs == 0 ? decoded != 0
-                   : (max_doc != (unsigned long long)index->docs.ids[index->docs.count - 1]))
+    if (ndocs == 0 && decoded != 0)
     {
         goto fail;
     }

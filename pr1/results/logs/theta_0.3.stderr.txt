@@ -1,0 +1,4 @@
+pass 1 (statistics): 42 documents, 956647 words, 0 stop-word words skipped, 0 positions dropped
+part 1: N=42 documents, V=14986 stems, 956647 positions, 2933 stop words (df/N > 0.300)
+pass 2 (index generation): 42 documents, 956647 words, 863311 stop-word words skipped, 0 positions dropped
+wrote 12053 terms to index.bin and 2933 stop words to stoplist.txt

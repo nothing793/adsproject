@@ -1,0 +1,1 @@
+queried 1 query against 500000 document(s), results in output.txt

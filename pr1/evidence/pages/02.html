@@ -1,0 +1,27 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>编译、词频统计与完整建索引</title><style>body{margin:0;background:#f2f5f7;color:#152534;font:18px/1.6 "Microsoft YaHei",sans-serif}
+    main{max-width:1320px;margin:36px auto;background:#fff;padding:32px 38px;border:1px solid #ccd5dd;border-radius:10px}
+    h1{font-size:32px;line-height:1.3;margin:12px 0 20px}h2{font-size:24px}h3{font-size:19px;margin-bottom:10px}
+    .tag{color:#17654a;font-weight:700}.note{background:#edf4ff;border-left:5px solid #376aa7;padding:14px 18px;margin:18px 0}
+    .warn{background:#fff4dc;border-left:5px solid #a87616;padding:14px 18px;margin:18px 0}
+    pre{background:#152534;color:#e9f1f7;border-radius:6px;padding:18px;font:16px/1.5 Consolas,"Microsoft YaHei",monospace;white-space:pre-wrap;overflow-wrap:anywhere}
+    table{width:100%;border-collapse:collapse;font-size:17px;margin:20px 0}th,td{text-align:left;border-bottom:1px solid #d9e0e5;padding:9px 12px}th{background:#eaf0f5}
+    a{color:#225d94}.footer{font-size:14px;color:#586777;margin-top:24px}.two{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+    </style><main><div class="tag">ADS PR1 · 实验记录 02</div><h1>编译、词频统计与完整建索引</h1><h3>编译命令（四个程序均零告警）</h3><pre>gcc -std=c99 -O2 -Wall -Wextra -Wpedantic code/index_gen.c code/stem.c -lm -o bin/index_gen.exe
+gcc -std=c99 -O2 -Wall -Wextra -Wpedantic code/query.c code/stem.c -lm -o bin/query.exe
+另外编译 stem_list 和 roundtrip；完整命令保存在 build_*.run.json。</pre><h3>θ=0.5 完整建索引原始 stderr</h3><pre>pass 1 (statistics): 42 documents, 956647 words, 0 stop-word words skipped, 0 positions dropped
+part 1: N=42 documents, V=14986 stems, 956647 positions, 1780 stop words (df/N &gt; 0.500)
+pass 2 (index generation): 42 documents, 956647 words, 825511 stop-word words skipped, 0 positions dropped
+wrote 13206 terms to index.bin and 1780 stop words to stoplist.txt
+</pre><h3>词频最高的词干（完整表见 word_statistics.csv）</h3><pre>stem,cf,df,df/N,stop_at_theta_0.5
+the,29622,42,1.0,True
+and,27365,42,1.0,True
+i,23243,42,1.0,True
+to,20898,42,1.0,True
+of,18181,42,1.0,True
+a,15347,42,1.0,True
+you,14236,42,1.0,True
+my,12935,42,1.0,True
+that,11938,42,1.0,True
+in,11901,42,1.0,True
+is,9717,42,1.0,True
+not,8871,42,1.0,True</pre><div class="note">停用词判据：df/N &gt; θ；N=42。θ=0.5 删除 1,780 个词干，保留 131,136 个位置。查询位置从 0 开始，且仍按完整原文计数。</div><div class="footer">真实测试日志展示页 · 截图由浏览器实拍 · 非终端原屏截取。原始数据与命令见 results/logs/*.run.json、*.txt。</div></main></html>
