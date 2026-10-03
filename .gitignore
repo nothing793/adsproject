@@ -1,11 +1,47 @@
-# 最终提交：代码、报告和测试数据压缩包。
+# ---------------------------------------------------------------------------
+# 追踪白名单（仅 admin 可改，规则说明见 readme.md 第 4 节）
+#
+#   仓库级文件： .gitignore / readme.md / AGENTS.md / CODEOWNERS
+#   prN/code/**              无条件追踪：C 源码、头文件、测试脚本
+#   prN/documentation/**     无条件追踪：报告
+#   prN/documentation.md     pr1 既有的单文件报告形式
+#   prN/readme.md            项目 readme：题面、结构介绍、编译与运行方法
+#   prN/test_data.zip        测试材料压缩包（单包形式）
+#   prN/testresult/*.zip     测试材料压缩包（testresult 目录形式，zip / rar / 7z）
+#
+#   其余一律忽略：语料 data/、实验结果 results/、证据 evidence/、截图、
+#   日志、临时索引与可执行文件等。
+#   拉取（clone / pull）范围见 readme.md 第 5 节。
+#   改动本文件前，先确认是否需要同步更新顶部说明与 readme.md 第 4 节表格。
+# ---------------------------------------------------------------------------
+
+# 1. 先忽略仓库根目录下的一切（含 .agents/、.codex/ 等本地运行目录）
 /*
 !/.gitignore
-!/pr1/
-/pr1/*
-!/pr1/code/
-!/pr1/documentation.md
-!/pr1/test_data.zip
+!/readme.md
+!/README.md
+!/AGENTS.md
+!/CODEOWNERS
+
+# 2. 必须放行 prN/ 目录本身，git 才会下探进去，否则下面的白名单不生效
+!/pr*/
+
+# 3. prN/ 下默认全部忽略，再逐个放行
+/pr*/*
+!/pr*/code/
+!/pr*/documentation/
+!/pr*/documentation.md
+!/pr*/readme.md
+!/pr*/test_data.zip
+
+# 4. testresult：只放行压缩包，散文件与过程文件不进入提交
+!/pr*/testresult/
+/pr*/testresult/*
+!/pr*/testresult/*.zip
+!/pr*/testresult/*.rar
+!/pr*/testresult/*.7z
+
+# 5. 构建与运行产物（任何目录下都不提交；沿用远端既有规则）
 **/__pycache__/
 **/*.pyc
 **/*.exe

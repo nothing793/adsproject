@@ -1,0 +1,23 @@
+# CODEOWNERS —— 评审归属（code owners）
+#
+# 位置：本文件位于仓库根目录，是 GitHub 认可的 CODEOWNERS 路径之一
+#       （另两个是 .github/CODEOWNERS 与 docs/CODEOWNERS，本仓库不重复放置）。
+# 语法：一行一条「匹配模式 所有者...」；`#` 起注释；所有者写 @用户名 或 @组织/团队。
+# 作用：向 PR 自动请求指定评审人。要让评审成为「合并的硬性条件」，需由 admin 在
+#       GitHub 仓库设置的分支保护规则中开启
+#         Require a pull request before merging
+#         + Require review from Code Owners
+#       直接 push 到未受保护的分支不受本文件约束，仓库管理员权限也可绕过。
+# 变更本文件请同步 readme.md 第 4、6 节。
+
+# 仓库级公约文件：由 admin 最终把关（readme.md 第 6 节）
+/readme.md     @nothing793
+/README.md     @nothing793
+/AGENTS.md     @nothing793
+/.gitignore    @nothing793
+/CODEOWNERS    @nothing793
+
+# 如需让各项目的 readme 与 code/README.md 也走 admin 评审，
+# 取消下面两行的注释即可：
+# /pr*/readme.md        @nothing793
+# /pr*/code/README.md   @nothing793
