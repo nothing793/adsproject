@@ -10,8 +10,7 @@
 
 - admin：nothing793（陈昱年）——可修改本仓库任何文件。
 - collaborator：believeSong55（宋诗雨）、uwindow（王宇轩）——只能修改 `prN/` 下的文件，以及根 `readme.md` 第 1 节项目索引。
-- 遇到「仅 admin 可做」的操作（修改根 `readme.md`、`AGENTS.md`、`CODEOWNERS`、`.gitignore` 白名单，裁决 readme 冲突条款）：先停下，请用户提供 GitHub 账户名；确认是 `nothing793` 后才继续。若用户不是 `nothing793`，提醒其联系 admin，不要代为执行。
-- 权限不明确时一律先问，不得自行放宽或「顺手」代执行。
+- 权限不明确时一律先问，不得自行放宽或「顺手」代执行。涉及权限问题时，需要提醒用户向admin发送通知，要求审核pull request
 
 ## 2. 工作流程
 

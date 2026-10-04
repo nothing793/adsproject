@@ -39,7 +39,7 @@ adsproject/
 
 1. 新建文件夹时必须同时在该文件夹内创建 `README.md`，说明该目录的用途与包含内容。
 2. 文件夹内容发生变化（新增、删除、重命名文件或调整功能）后，必须同步更新该文件夹下的 `README.md`。
-3. `pr1` 属既有状态：报告是单文件 `pr1/documentation.md`，未使用 `documentation/` 目录、未转 PDF；后续 project 按上表结构执行。
+3. `pr1` 属既有状态：报告是单文件 `pr1/documentation.md`，未使用 `documentation/` 目录、未转 PDF，章节编号为 Chapter 1—Chapter 5（其中 Chapter 4 为 Bonus、Chapter 5 为复现）；后续 project 按上表结构与 3.2 节的章节结构执行。
 
 ## 3. 提交物规范
 
@@ -51,6 +51,17 @@ adsproject/
 
 ### 3.2 documentation
 
+报告按课程评分细则（根目录 `评分细则.txt`）组织，各条目与报告位置的对应关系如下：
+
+| 细则条目 | 分值 | 要求 | 报告落点 |
+| --- | --- | --- | --- |
+| Item 1 | 1 | 封面含标题与完成日期；问题描述完整清晰 | 封面 + Chapter 1 |
+| Item 2 | 2 | 三个算法的伪代码描述与索引数据结构 | Chapter 2 |
+| Item 3 | 1 | 文档整洁、提交组织完整 | 全文 + 3.3 节 |
+| Item 4 | 4 | 完整测试数据表：倒排索引正确性、查询阈值 | Chapter 3 |
+| Item 5 | 3 | 时间与空间复杂度分析、测试结果讨论、Bonus | Chapter 4 |
+| Item 6 | 9 | 三个关键函数的实现与必要注释 | `code/`，见 3.1 节 |
+
 - 报告开头固定注明：
 
   ```
@@ -59,14 +70,23 @@ adsproject/
   陈昊老师。
   ```
 
-- 章节结构：Chapter 1 问题描述；Chapter 2 设计结构；Chapter 3 测试及分析。
+- 封面另需写明报告标题与完成日期（细则 Item 1）。
+- 章节结构（括号内为对应的细则条目）：
+  - Chapter 1 问题描述（Item 1）：写清「要做什么」与「为什么做」，不得整段照抄题目原文。
+  - Chapter 2 数据结构与算法（Item 2）：给出词频统计（word counter）、索引生成（index generator）、查询处理（query processor）三个算法的伪代码，并说明索引的数据结构；不得以「程序 + 注释」代替算法描述。
+  - Chapter 3 测试与结果（Item 4）：给出完整测试数据表，至少分为倒排索引正确性与查询阈值两组，每个用例写明目的，结果不得缺项。
+  - Chapter 4 复杂度与讨论（Item 5）：给出时间复杂度与空间复杂度的推导过程（不能只列结论），讨论测试结果，并回答 Bonus 问题。
+  - 需要时可在其后追加复现、提交说明等章节，编号顺延（`pr1` 的 Chapter 5 属此类）。
+- 引用 STL 或第三方库函数时，必须讨论其实现或复杂度（细则 Item 2、Item 5）。
 - 编写或修改 code 部分后，必须同步更新 Chapter 2；测试完成后必须补充 Chapter 3，并把测试材料与结果按 3.3 节提交。
+- 提交前按细则 Item 3 自查：文件夹结构正确、无缺件、图表数据齐全。
 - 先用 Markdown 编写，定稿后转为 PDF。
 
 ### 3.3 testresult
 
 - 存放测试文件与测试结果：题目未要求提交、但测试过程中使用的材料，例如输入生成脚本、input、output、日志等。
 - 过程性文件不保留；上传一律使用压缩包（zip / rar），不上传散文件。
+- 压缩包内保持规定文件夹结构（`code/`、`documentation/` 或 `documentation.md`、`readme.md` 等），不得平铺散文件；提交前核对无缺件（细则 Item 3）。
 - 测试材料与结果同时上传到 <https://github.com/nothing793/adsproject>。
 
 ### 3.4 readme
