@@ -404,6 +404,4 @@ Get-Content output.txt
 
 [2] Porter M F. An algorithm for suffix stripping. Program, 1980, 14(3): 130–137. C 实现：https://github.com/wooorm/stmr.c。
 
-[3] Manning C D, Raghavan P, Schütze H. Introduction to Information Retrieval. Cambridge University Press, 2008. https://nlp.stanford.edu/IR-book/。
 
-[4] SQLite. PRAGMA Statements：cache_size、temp_store. https://www.sqlite.org/pragma.html。
