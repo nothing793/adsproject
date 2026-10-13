@@ -25,14 +25,14 @@
 
 ```
 adsproject/
-├── readme.md      # 本文件：仓库公约、结构与权限（仅 admin 可改）
-├── AGENTS.md      # AI 助手在本仓库的工作约定（仅 admin 可改）
+├── readme.md      # 本文件：仓库公约、结构与权限（受保护文件，见第 6 节）
+├── AGENTS.md      # AI 助手在本仓库的工作约定（受保护文件，见第 6 节）
 ├── CODEOWNERS     # 评审归属：根目录公约文件由 admin 评审（见第 6 节）
 ├── .gitignore     # 追踪白名单，见第 4 节
 └── prN/           # 第 N 次 project
     ├── readme.md       # 题面、结构介绍、编译与运行方法、评分细则与章节映射
     ├── code/           # C 源码，必须另有 code/README.md
-    ├── documentation/  # 报告（Markdown 编写，定稿后转 PDF）
+    ├── documentation/  # 报告（Markdown 编写，定稿后转 PDF）；图表工具放 documentation/assets/
     └── testresult/     # 测试材料与测试结果，仅以压缩包形式提交
 ```
 
@@ -48,6 +48,7 @@ adsproject/
 
 - 使用 C 语言，按 gcc 标准编译（`-std=c99`，编译告警必须清零）。
 - 变量名尽量使用英文名词；注释与说明文档使用中文。
+- 每个 `.c`/`.h` 文件开头必须有注释块，说明该文件实现的功能；函数与关键步骤同样要有注释，说明不变量、边界条件与失败处理。
 - `code/README.md` 必须写明：目录结构、变量与接口的使用情况、已实现的功能、题目要求实现的功能、未实现的功能。
 
 ### 3.2 documentation
@@ -72,6 +73,7 @@ adsproject/
 - 引用 STL 或第三方库函数时，必须讨论其实现或复杂度（源自 pr1 细则 Item 2、Item 5）。
 - 编写或修改 code 部分后，必须同步更新 Chapter 2；测试完成后必须补充 Chapter 3，并把测试材料与结果按 3.3 节提交。
 - 提交前按细则 Item 3 自查：文件夹结构正确、无缺件、图表数据齐全。
+- 生成 documentation 图表所用的脚本或工具（Python 脚本、gnuplot 脚本等）统一存放在该项目的 `prN/documentation/assets/` 下，不要放进 `code/`；该目录须包含 `README.md`，说明用途与运行方法。
 
 每个 `prN` 的报告还须按本题评分细则组织，并在该项目的 `prN/readme.md` 中给出「细则条目 → 报告章节」映射表；题目未附评分细则时，按上述通用章节结构组织。
 
@@ -92,7 +94,8 @@ adsproject/
 
 - 存放测试文件与测试结果：题目未要求提交、但测试过程中使用的材料，例如输入生成脚本、input、output、日志等。
 - 过程性文件不保留；上传一律使用压缩包（zip / rar），不上传散文件。
-- 压缩包内保持规定文件夹结构（`code/`、`documentation/` 或 `documentation.md`、`readme.md` 等），不得平铺散文件；提交前核对无缺件（细则 Item 3）。
+- `prN/testresult/` 内的压缩包只收录测试材料与测试数据（例如生成脚本、合成输入、日志、结果 CSV、实验环境说明），不复制 `code/`、`documentation/`、`readme.md` 等源码与文档；代码与报告以仓库中的对应目录为准。
+- 作为最终成果提交的压缩包（交付包）按 `code/`、`documentation/` 或 `documentation.md`、`readme.md`、`testresult/` 等规定文件夹结构组织，不得平铺散文件；提交前核对无缺件（细则 Item 3）。
 - 测试材料与结果同时上传到 <https://github.com/nothing793/adsproject>。
 
 ### 3.4 readme
@@ -106,7 +109,7 @@ adsproject/
 
 | 路径 | 追踪 | 说明 |
 | --- | --- | --- |
-| `readme.md`、`AGENTS.md`、`CODEOWNERS`、`.gitignore` | ✅ | 仓库级公约文件，仅 admin 可改 |
+| `readme.md`、`AGENTS.md`、`CODEOWNERS`、`.gitignore` | ✅ | 仓库级公约文件（受保护文件，admin 与 collaborator 均可改，见第 6 节） |
 | `prN/code/**` | ✅ | C 源码、头文件、测试脚本，无条件追踪 |
 | `prN/documentation/**` 与 `prN/documentation.md` | ✅ | 报告，无条件追踪 |
 | `prN/readme.md` | ✅ | 项目 readme：题面、结构介绍、编译与运行方法、评分细则与章节映射 |
@@ -118,7 +121,7 @@ adsproject/
 规则：
 
 1. 每次 git 上传前必须逐条说明本次改动了哪些文件、为什么改；`git push` 的说明同样要求。
-2. `.gitignore` 是追踪范围唯一的实现，改动白名单属仓库级变更，仅 admin 可执行，并须同步更新本节表格。
+2. `.gitignore` 是追踪范围唯一的实现，改动白名单属仓库级变更，admin 与 collaborator 均可执行，但须同步更新本节表格，并按第 6 节说明后单独提交 PR。
 3. 未在本公约内规定的产物，放进该项目的 `prN/testresult/`，并在提交说明中注明。
 
 ## 5. 拉取：同步规则
@@ -129,9 +132,9 @@ adsproject/
 
 ## 6. 权限与评审
 
-- 仅 admin 可修改根目录 `readme.md`、`AGENTS.md`、`CODEOWNERS`、`.gitignore` 白名单。
-- collaborator 可修改根目录 `readme.md` 的「介绍部分」，即第 1 节项目索引中与本人负责项目相关的行；以及 `prN/` 下的全部文件。
-- 除第 1 节外，collaborator 不要直接修改根目录 `readme.md` 与 `AGENTS.md`，请按第 7 节提交修改意见。
+- 受保护文件指根目录 `readme.md`、`AGENTS.md`、`CODEOWNERS` 与 `.gitignore`；**admin 与 collaborator 都可以直接修改**这些文件，不再限于「只改根 `readme.md` 第 1 节项目索引」或「只提交修改意见」。
+- 修改受保护文件时，提交必须遵守：① 在 PR 说明中明确指出本次 PR 修改了哪些受保护文件、改了什么、为什么改；② 受保护文件的修改单独提交一个 PR，不与 `prN/` 下的普通改动混在同一个 PR 中。
+- collaborator 仍可自由修改 `prN/` 下的全部文件，也可修改根 `readme.md` 第 1 节项目索引中与本人负责项目相关的行；第 7 节的 `readme-feedback-<用户名>-<日期>.md` 机制保留，作为不直接改文件时的备选渠道。
 - 根目录公约文件的改动由根目录 `CODEOWNERS` 指定评审人 `@nothing793`；要让评审成为合并的硬性条件，需 admin 在 GitHub 仓库设置的分支保护中开启 `Require a pull request before merging` 与 `Require review from Code Owners`。该设置只在 GitHub 网页端可改。
 
 ## 7. 未规定、冲突、歧义的处理
