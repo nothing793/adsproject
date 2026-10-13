@@ -29,8 +29,8 @@
 | 文档 第 1 章 | 1 | `documentation/report.md` Chapter 1 |
 | 文档 第 2 章 | 2 | Chapter 2（CSR 图、Dijkstra、二叉堆、Fibonacci 堆的伪代码与数据结构） |
 | 编程：Fibonacci 堆与另一堆实现 Dijkstra | 6 | `code/`（`dijkstra.c`、`binary_heap.c`、`fibonacci_heap.c`、`graph.c`），见 `code/README.md` |
-| 编程：性能测试程序 | 3 | `code/benchmark.c`、`code/plot_results.py` |
-| 测试：测试输入与运行时间表 | 2 | Chapter 3 + `testresult/validation-20261013.zip` |
+| 编程：性能测试程序 | 3 | `code/benchmark.c`、`documentation/assets/plot_results.py` |
+| 测试：测试输入与运行时间表 | 2 | Chapter 3 + `testresult/validation-20261013.zip`（只收录 `testresult/` 内的测试材料，代码与报告不重复打包） |
 | 测试：运行时间与输入规模关系图 | 2 | Chapter 3 + `documentation/runtime.svg` |
 | 测试：分析与评论 | 3 | Chapter 4 |
 | 文档整体风格 | 1 | 全文 |
@@ -51,15 +51,17 @@ pr2/
 │   ├── dijkstra.c/.h          # 共用最短路径流程
 │   ├── main.c                # 单次查询与路径输出
 │   ├── benchmark.c           # 同查询计时与距离核对
-│   ├── plot_results.py        # CSV 转 SVG 曲线，无第三方依赖
 │   ├── Makefile
 │   └── tests/                # C 独立对拍与 Python 回归入口
 ├── documentation/
 │   ├── README.md
+│   ├── assets/
+│   │   ├── README.md         # 图表工具说明
+│   │   └── plot_results.py   # CSV 转 SVG 曲线，无第三方依赖
 │   ├── report.md             # Chapter 1—4
 │   └── runtime.svg           # 三路网实测曲线
 └── testresult/
-    └── validation-20261013.zip # 测试代码、合成输入、日志和结果
+    └── validation-20261013.zip # 仅含 testresult 内容：合成输入、验证日志、评测 CSV、实验环境
 ```
 
 # 代码设计
@@ -71,7 +73,9 @@ pr2/
 5. **距离安全**：使用 `uint64_t`，`UINT64_MAX` 表示不可达；负权、非法编号、弧数不符、非法记录和整数溢出均报错。为确保简单路径距离可表示，弧权上限为 `(UINT64_MAX-1)/max(n-1,1)`，超过该限制的输入会被保守拒绝。
 6. **性能比较**：工作区提前分配并复用；两种堆使用同一随机查询序列，固定种子、交替执行顺序；逐对核对距离，计时包含查询状态重置，不包含图读取、初次内存分配、预热与 CSV 写入。
 
-更多接口说明见 [code/README.md](code/README.md)，伪代码与复杂度见 [报告 Chapter 2、4](documentation/report.md)。
+7. **注释与文件头**：每个 `.c/.h` 文件开头都有一段文件头注释，写明该文件实现的功能、关键设计与前置条件；函数与关键步骤另有中文注释，重点说明不变量、边界与失败处理。
+
+生成报告图表的脚本按仓库公约存放在 `documentation/assets/`，不在 `code/` 中。更多接口说明见 [code/README.md](code/README.md)，伪代码与复杂度见 [报告 Chapter 2、4](documentation/report.md)。
 
 # 编译与运行
 
@@ -96,13 +100,18 @@ Linux 也可执行 `make` 和 `make test`；Windows PowerShell 使用 `.\shortes
 python tests/run_tests.py --output /path/to/local-validation
 ```
 
-三路网评测与绘图：
+三路网评测（在 `code/` 执行，CSV 写在当前目录）：
 
 ```sh
 ./benchmark /path/to/USA-road-d.NY.gr 1000 20261013 NY.csv
 ./benchmark /path/to/USA-road-d.BAY.gr 1000 20261013 BAY.csv
 ./benchmark /path/to/USA-road-d.COL.gr 1000 20261013 COL.csv
-python plot_results.py NY.csv BAY.csv COL.csv --output runtime.svg
+```
+
+绘制规模曲线（在 `pr2/` 执行，CSV 路径按实际保存位置传入）：
+
+```sh
+python documentation/assets/plot_results.py path/to/NY.csv path/to/BAY.csv path/to/COL.csv --output documentation/runtime.svg
 ```
 
 输出 CSV 包含图规模、查询数、种子、堆类型、累计秒数、平均毫秒数、可达查询数、距离摘要、出堆及松弛统计、计时分辨率。相同图及种子可复现查询和距离摘要，运行时间允许变化。查询允许重复，但每对起终点不同；不可达查询也参与计时。查询数少于 1000、种子为 0 或图少于两个顶点会被拒绝。
@@ -139,3 +148,15 @@ python plot_results.py NY.csv BAY.csv COL.csv --output runtime.svg
 根 `readme.md` 第 3.2 节原先把 pr1 的倒排索引与查询阈值当作全仓库通用的报告要求。管理员已按 `readme-feedback-believeSong55-20261013.md` 的意见改写该节：拆分为「通用要求 + pr1 专属细则」两层，并新增「每个 prN 在本项目 readme 中给出评分细则条目与报告章节映射表」的要求（本项目映射见上文「评分细则与报告章节映射」）。
 
 本次经确认将 pr2 报告按最短路径题目组织，保留四章结构；项目索引仅追加 pr2 一行。代码与报告仍待管理员 nothing793 评审，报告尚未生成定稿 PDF。
+
+## 本轮修改（2026-10-13 组内评审）
+
+按 `修改意见.md` 以及随后的两点确认，已完成的改动：
+
+1. **代码注释**：为 `code/` 下全部 `.c/.h`（含 `tests/test.c`）补写文件头注释块，说明该文件实现的功能、关键设计与前置条件；函数与关键步骤补充中文注释，说明不变量、边界与失败处理。只增加注释、未改动可执行逻辑（已用 token 级比对与全量测试验证）。
+2. **图表工具位置**：`plot_results.py` 从 `code/` 移到 `documentation/assets/`，并新增 `documentation/assets/README.md`；`code/README.md`、`documentation/README.md`、`documentation/report.md` 与本 readme 的引用路径同步更新。
+3. **根 `readme.md` 新增约定**：目录结构补上 `documentation/assets/`；3.1 节要求每个 `.c/.h` 文件头说明该文件功能；3.2 节要求生成图表所用的脚本存放在 `prN/documentation/assets/`。
+4. **受保护文件权限**：第 6 节明确受保护文件（根 `readme.md`、`AGENTS.md`、`CODEOWNERS`、`.gitignore`）admin 与 collaborator 均可直接修改，但须在 PR 中说明改了什么、为什么改，并单独提交 PR；第 2、4 节中原「仅 admin 可改」的表述与根 `AGENTS.md` 第 1 节的权限说明同步更新。
+5. **测试压缩包**：`testresult/validation-20261013.zip` 重建，只收录 `testresult/` 内的测试材料与测试数据（合成输入、验证日志、三份评测 CSV、同种子复现 CSV、实验环境与数据校验信息），不再复制 `code/`、`documentation/`、`readme.md` 与 `image.png`；根 `readme.md` 第 3.3 节已按「`testresult/` 内的压缩包只收录测试材料与测试数据，作为最终成果提交的压缩包仍保留 `code/`、`documentation/`、`readme.md`、`testresult/` 等规定结构」改写。
+
+仍待处理：报告定稿 PDF；最终成果压缩包待报告定稿后按上述结构汇编；代码与报告仍待管理员 nothing793 评审。
