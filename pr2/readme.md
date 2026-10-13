@@ -19,3 +19,106 @@
 测试：提供必要的测试输入并给出运行时间表（2分）。绘制运行时间与输入规模的关系图以进行说明（2分）。撰写分析和评论（3分）。
 
 文档：第1章（1分）、第2章（2分），最后是一份完整的报告（文档整体风格1分）。
+
+# 实现状态与目录
+
+已完成 C99 的二叉堆及 Fibonacci 堆 Dijkstra、DIMACS 文件读取、路径输出和性能评测程序。2026-10-13 已完成三份真实 USA 路网各 1000 对查询的实测及独立正确性测试。代码与报告待组内评审；当前报告为 Markdown，尚未定稿转 PDF。
+
+```text
+pr2/
+├── readme.md
+├── image.png                  # 保留原题面截图
+├── code/
+│   ├── README.md              # 接口、变量和功能清单
+│   ├── graph.c/.h             # DIMACS 读取与 CSR 图
+│   ├── binary_heap.c/.h       # 带位置映射的二叉堆
+│   ├── fibonacci_heap.c/.h    # 句柄、合并与级联切割
+│   ├── dijkstra.c/.h          # 共用最短路径流程
+│   ├── main.c                # 单次查询与路径输出
+│   ├── benchmark.c           # 同查询计时与距离核对
+│   ├── plot_results.py        # CSV 转 SVG 曲线，无第三方依赖
+│   ├── Makefile
+│   └── tests/                # C 独立对拍与 Python 回归入口
+├── documentation/
+│   ├── README.md
+│   ├── report.md             # Chapter 1—4
+│   └── runtime.svg           # 三路网实测曲线
+└── testresult/
+    └── validation-20261013.zip # 测试代码、合成输入、日志和结果
+```
+
+# 代码设计
+
+1. **图存储**：使用 CSR 邻接表，顶点的出弧位于 `offset[u]..offset[u+1]`；保留有向弧、重边、自环和零权边。文件顶点编号从 1 开始，内存从 0 开始。
+2. **二叉堆**：`items` 保存顶点，`position` 保存顶点到堆下标的映射，插入和 decrease-key 上浮，extract-min 下沉；每个顶点最多存在一个堆条目。
+3. **Fibonacci 堆**：顶点编号作为稳定句柄；数组节点保存父亲、孩子、左右兄弟、度数和标记。根及孩子组成双向循环链表；删除最小值后按度数合并，降低键值时执行切割及级联切割。
+4. **共用 Dijkstra**：维护 `distance`、`previous` 和 `settled`，仅将首次发现的顶点入堆，改进已有候选时减小键值。目标出堆后才提前终止。两种堆按“距离、顶点编号”相同顺序打破平局。
+5. **距离安全**：使用 `uint64_t`，`UINT64_MAX` 表示不可达；负权、非法编号、弧数不符、非法记录和整数溢出均报错。为确保简单路径距离可表示，弧权上限为 `(UINT64_MAX-1)/max(n-1,1)`，超过该限制的输入会被保守拒绝。
+6. **性能比较**：工作区提前分配并复用；两种堆使用同一随机查询序列，固定种子、交替执行顺序；逐对核对距离，计时包含查询状态重置，不包含图读取、初次内存分配、预热与 CSV 写入。
+
+更多接口说明见 [code/README.md](code/README.md)，伪代码与复杂度见 [报告 Chapter 2、4](documentation/report.md)。
+
+# 编译与运行
+
+需要 GCC；Python 3 仅用于自动回归和绘图，核心算法没有第三方依赖。以下命令在 `pr2/code/` 执行：
+
+```sh
+gcc -std=c99 -O2 -Wall -Wextra -Wpedantic main.c graph.c binary_heap.c fibonacci_heap.c dijkstra.c -o shortest_path
+gcc -std=c99 -O2 -Wall -Wextra -Wpedantic benchmark.c graph.c binary_heap.c fibonacci_heap.c dijkstra.c -o benchmark
+gcc -std=c99 -O2 -Wall -Wextra -Wpedantic -I. tests/test.c graph.c binary_heap.c fibonacci_heap.c dijkstra.c -o test_runner
+
+./test_runner
+./shortest_path /path/to/USA-road-d.NY.gr binary 1 100
+./shortest_path /path/to/USA-road-d.NY.gr fibonacci 1 100
+./benchmark /path/to/USA-road-d.NY.gr 1000 20261013 NY.csv
+```
+
+Linux 也可执行 `make` 和 `make test`；Windows PowerShell 使用 `.\shortest_path.exe`、`.\benchmark.exe`、`.\test_runner.exe` 替换上述可执行文件调用。MinGW GCC 可直接编译；本次实测为 Windows，未声称已在 Linux 上实测。
+
+完整回归：
+
+```sh
+python tests/run_tests.py --output /path/to/local-validation
+```
+
+三路网评测与绘图：
+
+```sh
+./benchmark /path/to/USA-road-d.NY.gr 1000 20261013 NY.csv
+./benchmark /path/to/USA-road-d.BAY.gr 1000 20261013 BAY.csv
+./benchmark /path/to/USA-road-d.COL.gr 1000 20261013 COL.csv
+python plot_results.py NY.csv BAY.csv COL.csv --output runtime.svg
+```
+
+输出 CSV 包含图规模、查询数、种子、堆类型、累计秒数、平均毫秒数、可达查询数、距离摘要、出堆及松弛统计、计时分辨率。相同图及种子可复现查询和距离摘要，运行时间允许变化。查询允许重复，但每对起终点不同；不可达查询也参与计时。查询数少于 1000、种子为 0 或图少于两个顶点会被拒绝。
+
+# 数据下载
+
+使用第九届 DIMACS 挑战赛的距离权重版本；解压 `.gr.gz` 后将 `.gr` 路径传给程序。程序不直接读取 gzip，也不自动联网。
+
+- [题面数据页面](http://www.dis.uniroma1.it/challenge9/download.shtml)
+- [NY：纽约](https://www.diag.uniroma1.it/challenge9/data/USA-road-d/USA-road-d.NY.gr.gz)
+- [BAY：旧金山湾区](https://www.diag.uniroma1.it/challenge9/data/USA-road-d/USA-road-d.BAY.gr.gz)
+- [COL：科罗拉多](https://www.diag.uniroma1.it/challenge9/data/USA-road-d/USA-road-d.COL.gr.gz)
+
+这些原始道路数据不包含在报告、测试压缩包或交付包中。
+
+# 实测摘要
+
+环境：Windows x64，AMD Ryzen 9 8940HX，MinGW-w64 GCC 15.2.0；编译参数为 `-std=c99 -O2 -Wall -Wextra -Wpedantic`（回归构建另外启用 `-Werror`）。日期为 2026-10-13。
+
+| 路网 | 顶点 | 有向弧 | 查询数 | 二叉堆总时间（秒） | Fibonacci 堆总时间（秒） |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| NY | 264346 | 733846 | 1000 | 12.010 | 32.405 |
+| BAY | 321270 | 800172 | 1000 | 13.579 | 37.635 |
+| COL | 435666 | 1057066 | 1000 | 18.747 | 51.433 |
+
+全部 3000 对查询距离一致。独立测试通过 30000 次堆操作审计，以及 100 张小图上的 137400 次距离和路径检查；另有输入校验、CLI 和固定种子重复运行测试。
+
+![运行时间与顶点规模](documentation/runtime.svg)
+
+本轮结果中二叉堆更快；这是本机、三个数据集、单轮实验的结果，不能推断所有图和所有实现。计时使用 C `clock()`；本机时钟每秒 1000 tick。不同 C 运行库的 `clock()` 语义可能不同（CPU 时间或经过时间），跨平台结果应单独比较。详细统计、限制及分析见报告。
+
+# 待评审事项
+
+根 README 中报告要求仍引用 pr1 的倒排索引和查询阈值。本次经确认将 pr2 报告按最短路径题目组织，保留四章结构；仓库根公约未改写，仅补充项目索引。请由管理员 nothing793 审核这一适配和代码变更。报告待评审，尚未生成定稿 PDF。

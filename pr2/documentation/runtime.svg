@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="590" viewBox="0 0 920 590">
+<rect width="920" height="590" fill="white"/>
+<g font-family="Arial, sans-serif" fill="#182636">
+<text x="100" y="35" font-size="23">Dijkstra on DIMACS USA road networks</text>
+<text x="100" y="58" font-size="13">Same seeded queries; lower is faster; one run per dataset</text>
+<path d="M 100 460.0 H 780" stroke="#e0e5eb"/>
+<text x="88" y="465.0" text-anchor="end" font-size="13">0.0</text>
+<text x="100.0" y="484" text-anchor="middle" font-size="13">0k</text>
+<path d="M 100 384.0 H 780" stroke="#e0e5eb"/>
+<text x="88" y="389.0" text-anchor="end" font-size="13">12.3</text>
+<text x="236.0" y="484" text-anchor="middle" font-size="13">98k</text>
+<path d="M 100 308.0 H 780" stroke="#e0e5eb"/>
+<text x="88" y="313.0" text-anchor="end" font-size="13">24.7</text>
+<text x="372.0" y="484" text-anchor="middle" font-size="13">195k</text>
+<path d="M 100 232.0 H 780" stroke="#e0e5eb"/>
+<text x="88" y="237.0" text-anchor="end" font-size="13">37.0</text>
+<text x="508.0" y="484" text-anchor="middle" font-size="13">293k</text>
+<path d="M 100 156.0 H 780" stroke="#e0e5eb"/>
+<text x="88" y="161.0" text-anchor="end" font-size="13">49.4</text>
+<text x="644.0" y="484" text-anchor="middle" font-size="13">390k</text>
+<path d="M 100 80.0 H 780" stroke="#e0e5eb"/>
+<text x="88" y="85.0" text-anchor="end" font-size="13">61.7</text>
+<text x="780.0" y="484" text-anchor="middle" font-size="13">488k</text>
+<path d="M 100 80 V 460 H 780" fill="none" stroke="#182636"/>
+<text x="440" y="510" text-anchor="middle">Vertices</text>
+<text transform="translate(28 275) rotate(-90)" text-anchor="middle">Mean time per query (ms)</text>
+<polyline points="468.39,386.06 547.72,376.40 707.14,344.58" fill="none" stroke="#1769b0" stroke-width="3"/>
+<circle cx="468.39" cy="386.06" r="5" fill="#1769b0"/>
+<text x="477.39" y="377.06" fill="#1769b0" font-size="12">NY 12.01</text>
+<circle cx="547.72" cy="376.40" r="5" fill="#1769b0"/>
+<text x="556.72" y="367.40" fill="#1769b0" font-size="12">BAY 13.58</text>
+<circle cx="707.14" cy="344.58" r="5" fill="#1769b0"/>
+<text x="716.14" y="335.58" fill="#1769b0" font-size="12">COL 18.75</text>
+<text x="150" y="548" fill="#1769b0" font-size="16">binary</text>
+<polyline points="468.39,260.49 547.72,228.29 707.14,143.33" fill="none" stroke="#c65320" stroke-width="3"/>
+<circle cx="468.39" cy="260.49" r="5" fill="#c65320"/>
+<text x="477.39" y="251.49" fill="#c65320" font-size="12">NY 32.41</text>
+<circle cx="547.72" cy="228.29" r="5" fill="#c65320"/>
+<text x="556.72" y="219.29" fill="#c65320" font-size="12">BAY 37.63</text>
+<circle cx="707.14" cy="143.33" r="5" fill="#c65320"/>
+<text x="716.14" y="134.33" fill="#c65320" font-size="12">COL 51.43</text>
+<text x="370" y="548" fill="#c65320" font-size="16">fibonacci</text>
+<text x="100" y="576" font-size="12">Graph loading, allocation, warm-up and CSV writing excluded; query reset included.</text>
+</g></svg>
