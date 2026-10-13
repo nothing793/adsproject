@@ -9,7 +9,7 @@
 ## 1. 身份与权限
 
 - admin：nothing793（陈昱年）——可修改本仓库任何文件。
-- collaborator：believeSong55（宋诗雨）、uwindow（王宇轩）——只能修改 `prN/` 下的文件，以及根 `readme.md` 第 1 节项目索引。
+- collaborator：believeSong55（宋诗雨）、uwindow（王宇轩）——可修改 `prN/` 下的文件、根 `readme.md` 第 1 节项目索引，以及受保护文件（根 `readme.md`、`AGENTS.md`、`CODEOWNERS`、`.gitignore`）；受保护文件的修改须在 PR 中说明改了什么、为什么改，并单独提交一个 PR，不与 `prN/` 下的普通改动混在同一 PR 中（见根 `readme.md` 第 6 节）。
 - 权限不明确时一律先问，不得自行放宽或「顺手」代执行。涉及权限问题时，需要提醒用户向admin发送通知，要求审核pull request
 
 ## 2. 工作流程
