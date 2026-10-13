@@ -1,6 +1,6 @@
 # pr2 代码说明
 
-本目录实现最小优先队列支持的 Dijkstra，并比较二叉堆与 Fibonacci 堆。全部核心代码为 C99，中文注释说明主要不变量与边界处理，不依赖 STL 或第三方算法库。
+本目录实现最小优先队列支持的 Dijkstra，并比较二叉堆与 Fibonacci 堆。全部核心代码为 C99，中文注释说明主要不变量与边界处理，不依赖 STL 或第三方算法库。每个 `.c/.h` 文件开头都有一段文件头注释，说明该文件实现的功能、关键设计与前置条件；生成报告图表的脚本不在本目录，见 `../documentation/assets/plot_results.py`。
 
 ## 文件与职责
 
@@ -12,11 +12,12 @@
 | `dijkstra.c/.h` | 统一松弛、终止条件、前驱与操作统计 |
 | `main.c` | 单对查询，输出最短距离和一条路径 |
 | `benchmark.c` | 至少 1000 对固定种子查询，两种堆分别计时并逐对核对 |
-| `plot_results.py` | 用 Python 标准库从 CSV 生成 SVG 规模曲线 |
 | `Makefile` | GCC 构建、C 测试及清理入口 |
 | `tests/test.c` | 堆结构审计、级联切割、解析边界、独立 Floyd 对拍 |
 | `tests/run_tests.py` | 零告警构建、C 测试、CLI 与基准复现回归 |
 | `tests/README.md` | 测试目的和运行限制 |
+
+报告图表由 `../documentation/assets/plot_results.py` 生成：它读取 `benchmark` 的 CSV 并画出 SVG 规模曲线。按仓库公约，生成 documentation 图表的脚本统一存放在 `documentation/assets/`，因此不在本目录。
 
 ## 数据结构、变量与接口
 
@@ -77,7 +78,7 @@ path=1 -> 3 -> 2 -> 4 -> 5
 | 时间表、规模曲线与分析 | 已同步项目 README 与 Markdown 报告 |
 | 只提供道路数据下载链接 | 已遵守；不打包 USA 数据 |
 
-未实现 / 不支持：负权图、直接读取 gzip、路径启发式加速（A* 等）、额外堆类型、全部等长最短路径枚举。它们不是本题必需功能。报告待评审，尚未生成定稿 PDF。
+未实现 / 不支持：负权图、直接读取 gzip、路径启发式加速（A* 等）、额外堆类型、全部等长最短路径枚举。
 
 ## 测试和计时边界
 
