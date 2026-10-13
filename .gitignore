@@ -8,8 +8,9 @@
 #   prN/readme.md            项目 readme：题面、结构介绍、编译与运行方法
 #   prN/test_data.zip        测试材料压缩包（单包形式）
 #   prN/testresult/*.zip     测试材料压缩包（testresult 目录形式，zip / rar / 7z）
+#   prN/image.png            题目截图（题面配图，单文件形式）
 #
-#   其余一律忽略：语料 data/、实验结果 results/、证据 evidence/、截图、
+#   其余一律忽略：语料 data/、实验结果 results/、证据 evidence/
 #   日志、临时索引与可执行文件等。
 #   拉取（clone / pull）范围见 readme.md 第 5 节。
 #   改动本文件前，先确认是否需要同步更新顶部说明与 readme.md 第 4 节表格。
@@ -33,6 +34,8 @@
 !/pr*/documentation.md
 !/pr*/readme.md
 !/pr*/test_data.zip
+!/pr*/image.png
+
 
 # 4. testresult：只放行压缩包，散文件与过程文件不进入提交
 !/pr*/testresult/

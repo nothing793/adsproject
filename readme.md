@@ -104,9 +104,10 @@ adsproject/
 | `prN/code/**` | ✅ | C 源码、头文件、测试脚本，无条件追踪 |
 | `prN/documentation/**` 与 `prN/documentation.md` | ✅ | 报告，无条件追踪 |
 | `prN/readme.md` | ✅ | 项目 readme：题面、结构介绍、编译与运行方法 |
+| `prN/image.png` | ✅ | 题目截图（题面配图，单文件形式） |
 | `prN/testresult/*.zip`、`*.rar`、`*.7z` | ✅ | 仅压缩包形式 |
 | `prN/testresult/**` 的其他文件 | ❌ | 过程文件、散文件不上传 |
-| `prN/data/**`、`prN/results/**`、`prN/evidence/**` 等 | ❌ | 语料、实验结果、证据、截图、日志、临时索引、可执行文件 |
+| `prN/data/**`、`prN/results/**`、`prN/evidence/**` 等 | ❌ | 语料、实验结果、证据、日志、临时索引、可执行文件 |
 
 规则：
 
@@ -116,7 +117,7 @@ adsproject/
 
 ## 5. 拉取：同步规则
 
-1. 默认同步范围：`prN/code/**`、`prN/documentation/**`、各 `prN/readme.md`，以及仓库级文件（`readme.md`、`AGENTS.md`、`CODEOWNERS`、`.gitignore`）。
+1. 默认同步范围：`prN/code/**`、`prN/documentation/**`、各 `prN/readme.md`、各 `prN/image.png`（题目截图），以及仓库级文件（`readme.md`、`AGENTS.md`、`CODEOWNERS`、`.gitignore`）。
 2. `prN/testresult/**` 体积较大，默认不拉取；需要时按需获取（`git sparse-checkout` 或单独下载压缩包）。
 3. 需要全量内容时直接 `git clone` / `git pull`。
 
