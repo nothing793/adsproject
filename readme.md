@@ -30,7 +30,7 @@ adsproject/
 ├── CODEOWNERS     # 评审归属：根目录公约文件由 admin 评审（见第 6 节）
 ├── .gitignore     # 追踪白名单，见第 4 节
 └── prN/           # 第 N 次 project
-    ├── readme.md       # 题面、结构介绍、编译与运行方法
+    ├── readme.md       # 题面、结构介绍、编译与运行方法、评分细则与章节映射
     ├── code/           # C 源码，必须另有 code/README.md
     ├── documentation/  # 报告（Markdown 编写，定稿后转 PDF）
     └── testresult/     # 测试材料与测试结果，仅以压缩包形式提交
@@ -40,7 +40,7 @@ adsproject/
 
 1. 新建文件夹时必须同时在该文件夹内创建 `README.md`，说明该目录的用途与包含内容。
 2. 文件夹内容发生变化（新增、删除、重命名文件或调整功能）后，必须同步更新该文件夹下的 `README.md`。
-3. `pr1` 属既有状态：报告是单文件 `pr1/documentation.md`，未使用 `documentation/` 目录、未转 PDF，章节编号为 Chapter 1—Chapter 5（其中 Chapter 4 为 Bonus、Chapter 5 为复现）；后续 project 按上表结构与 3.2 节的章节结构执行。
+3. `pr1` 属既有状态：报告是单文件 `pr1/documentation.md`，未使用 `documentation/` 目录、未转 PDF，章节编号为 Chapter 1—Chapter 5（其中 Chapter 4 为 Bonus、Chapter 5 为复现）；后续 project 按上表结构与 3.2 节的通用章节结构执行，并在各自的 `prN/readme.md` 中给出本题评分细则条目与报告章节的映射表。
 
 ## 3. 提交物规范
 
@@ -52,16 +52,7 @@ adsproject/
 
 ### 3.2 documentation
 
-报告按课程评分细则（根目录 `评分细则.txt`）组织，各条目与报告位置的对应关系如下：
-
-| 细则条目 | 分值 | 要求 | 报告落点 |
-| --- | --- | --- | --- |
-| Item 1 | 1 | 封面含标题与完成日期；问题描述完整清晰 | 封面 + Chapter 1 |
-| Item 2 | 2 | 三个算法的伪代码描述与索引数据结构 | Chapter 2 |
-| Item 3 | 1 | 文档整洁、提交组织完整 | 全文 + 3.3 节 |
-| Item 4 | 4 | 完整测试数据表：倒排索引正确性、查询阈值 | Chapter 3 |
-| Item 5 | 3 | 时间与空间复杂度分析、测试结果讨论、Bonus | Chapter 4 |
-| Item 6 | 9 | 三个关键函数的实现与必要注释 | `code/`，见 3.1 节 |
+报告统一先用 Markdown 编写，定稿后转为 PDF。所有 `prN` 的报告都必须满足下列通用要求：
 
 - 报告开头固定注明：
 
@@ -71,17 +62,31 @@ adsproject/
   陈昊老师。
   ```
 
-- 封面另需写明报告标题与完成日期（细则 Item 1）。
-- 章节结构（括号内为对应的细则条目）：
+- 封面另需写明报告标题与完成日期（对应 pr1 细则 Item 1）。
+- 通用章节结构：
   - Chapter 1 问题描述（Item 1）：写清「要做什么」与「为什么做」，不得整段照抄题目原文。
-  - Chapter 2 数据结构与算法（Item 2）：给出词频统计（word counter）、索引生成（index generator）、查询处理（query processor）三个算法的伪代码，并说明索引的数据结构；不得以「程序 + 注释」代替算法描述。
-  - Chapter 3 测试与结果（Item 4）：给出完整测试数据表，至少分为倒排索引正确性与查询阈值两组，每个用例写明目的，结果不得缺项。
-  - Chapter 4 复杂度与讨论（Item 5）：给出时间复杂度与空间复杂度的推导过程（不能只列结论），讨论测试结果，并回答 Bonus 问题。
+  - Chapter 2 数据结构与算法（Item 2）：给出本题核心算法的伪代码，并说明所用数据结构；不得以「程序 + 注释」代替算法描述。
+  - Chapter 3 测试与结果（Item 4）：给出完整测试数据表，写明每个用例的目的，结果不得缺项。
+  - Chapter 4 复杂度与讨论（Item 5）：给出时间复杂度与空间复杂度的推导过程（不能只列结论），讨论测试结果，并回答题目中的 Bonus 问题（若本题设有 Bonus）。
   - 需要时可在其后追加复现、提交说明等章节，编号顺延（`pr1` 的 Chapter 5 属此类）。
-- 引用 STL 或第三方库函数时，必须讨论其实现或复杂度（细则 Item 2、Item 5）。
+- 引用 STL 或第三方库函数时，必须讨论其实现或复杂度（源自 pr1 细则 Item 2、Item 5）。
 - 编写或修改 code 部分后，必须同步更新 Chapter 2；测试完成后必须补充 Chapter 3，并把测试材料与结果按 3.3 节提交。
 - 提交前按细则 Item 3 自查：文件夹结构正确、无缺件、图表数据齐全。
-- 先用 Markdown 编写，定稿后转为 PDF。
+
+每个 `prN` 的报告还须按本题评分细则组织，并在该项目的 `prN/readme.md` 中给出「细则条目 → 报告章节」映射表；题目未附评分细则时，按上述通用章节结构组织。
+
+根目录 `评分细则.txt` 是 pr1（迷你搜索引擎）题目的评分细则，其条目与报告位置的对应关系如下，**仅适用于 pr1**：
+
+| 细则条目 | 分值 | 要求 | 报告落点 |
+| --- | --- | --- | --- |
+| Item 1 | 1 | 封面含标题与完成日期；问题描述完整清晰 | 封面 + Chapter 1 |
+| Item 2 | 2 | 三个算法的伪代码描述与索引数据结构：词频统计（word counter）、索引生成（index generator）、查询处理（query processor） | Chapter 2 |
+| Item 3 | 1 | 文档整洁、提交组织完整 | 全文 + 3.3 节 |
+| Item 4 | 4 | 完整测试数据表：倒排索引正确性、查询阈值 | Chapter 3 |
+| Item 5 | 3 | 时间与空间复杂度分析、测试结果讨论、Bonus | Chapter 4 |
+| Item 6 | 9 | 三个关键函数的实现与必要注释 | `code/`，见 3.1 节 |
+
+在 pr1 中，Chapter 2 必须分别给出词频统计、索引生成、查询处理三个算法的伪代码，Chapter 3 至少分为倒排索引正确性与查询阈值两组。pr2 等后续项目按各自题目细则细化，映射表见各自的 `prN/readme.md`（pr2 见 `pr2/readme.md`）。
 
 ### 3.3 testresult
 
@@ -92,7 +97,7 @@ adsproject/
 
 ### 3.4 readme
 
-- 每个 `prN/readme.md` 需包含题面、结构介绍、编译与运行方法。
+- 每个 `prN/readme.md` 需包含题面、结构介绍、编译与运行方法，以及本题评分细则条目与报告章节的映射表（见 3.2 节）。
 - 根目录 `readme.md` 只放仓库级公约（本文件），项目细节写进各自的 `prN/readme.md`。
 
 ## 4. 上传：追踪规则
@@ -104,7 +109,7 @@ adsproject/
 | `readme.md`、`AGENTS.md`、`CODEOWNERS`、`.gitignore` | ✅ | 仓库级公约文件，仅 admin 可改 |
 | `prN/code/**` | ✅ | C 源码、头文件、测试脚本，无条件追踪 |
 | `prN/documentation/**` 与 `prN/documentation.md` | ✅ | 报告，无条件追踪 |
-| `prN/readme.md` | ✅ | 项目 readme：题面、结构介绍、编译与运行方法 |
+| `prN/readme.md` | ✅ | 项目 readme：题面、结构介绍、编译与运行方法、评分细则与章节映射 |
 | `prN/image.png` | ✅ | 题目截图（题面配图，单文件形式） |
 | `prN/testresult/*.zip`、`*.rar`、`*.7z` | ✅ | 仅压缩包形式 |
 | `prN/testresult/**` 的其他文件 | ❌ | 过程文件、散文件不上传 |

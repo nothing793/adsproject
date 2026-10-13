@@ -20,6 +20,21 @@
 
 文档：第1章（1分）、第2章（2分），最后是一份完整的报告（文档整体风格1分）。
 
+# 评分细则与报告章节映射
+
+本题评分由题面给出（见上文「评分」），其条目与报告章节、代码的对应关系如下（根 `readme.md` 第 3.2 节要求）：
+
+| 评分条目 | 分值 | 落点 |
+| --- | --- | --- |
+| 文档 第 1 章 | 1 | `documentation/report.md` Chapter 1 |
+| 文档 第 2 章 | 2 | Chapter 2（CSR 图、Dijkstra、二叉堆、Fibonacci 堆的伪代码与数据结构） |
+| 编程：Fibonacci 堆与另一堆实现 Dijkstra | 6 | `code/`（`dijkstra.c`、`binary_heap.c`、`fibonacci_heap.c`、`graph.c`），见 `code/README.md` |
+| 编程：性能测试程序 | 3 | `code/benchmark.c`、`code/plot_results.py` |
+| 测试：测试输入与运行时间表 | 2 | Chapter 3 + `testresult/validation-20261013.zip` |
+| 测试：运行时间与输入规模关系图 | 2 | Chapter 3 + `documentation/runtime.svg` |
+| 测试：分析与评论 | 3 | Chapter 4 |
+| 文档整体风格 | 1 | 全文 |
+
 # 实现状态与目录
 
 已完成 C99 的二叉堆及 Fibonacci 堆 Dijkstra、DIMACS 文件读取、路径输出和性能评测程序。2026-10-13 已完成三份真实 USA 路网各 1000 对查询的实测及独立正确性测试。代码与报告待组内评审；当前报告为 Markdown，尚未定稿转 PDF。
@@ -121,4 +136,6 @@ python plot_results.py NY.csv BAY.csv COL.csv --output runtime.svg
 
 # 待评审事项
 
-根 README 中报告要求仍引用 pr1 的倒排索引和查询阈值。本次经确认将 pr2 报告按最短路径题目组织，保留四章结构；仓库根公约未改写，仅补充项目索引。请由管理员 nothing793 审核这一适配和代码变更。报告待评审，尚未生成定稿 PDF。
+根 `readme.md` 第 3.2 节原先把 pr1 的倒排索引与查询阈值当作全仓库通用的报告要求。管理员已按 `readme-feedback-believeSong55-20261013.md` 的意见改写该节：拆分为「通用要求 + pr1 专属细则」两层，并新增「每个 prN 在本项目 readme 中给出评分细则条目与报告章节映射表」的要求（本项目映射见上文「评分细则与报告章节映射」）。
+
+本次经确认将 pr2 报告按最短路径题目组织，保留四章结构；项目索引仅追加 pr2 一行。代码与报告仍待管理员 nothing793 评审，报告尚未生成定稿 PDF。
