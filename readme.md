@@ -15,6 +15,7 @@
 | 项目 | 状态 | 题目 | 源码 | 报告 |
 | --- | --- | --- | --- | --- |
 | [pr1](pr1/readme.md) | 已完成 | Roll Your Own Mini Search Engine（迷你搜索引擎） | [pr1/code/](pr1/code/README.md) | [pr1/documentation.md](pr1/documentation.md) |
+| [pr2](pr2/readme.md) | 代码与三路网测试已完成；待评审 | Dijkstra 与优先队列比较 | [pr2/code/](pr2/code/README.md) | [pr2/documentation/](pr2/documentation/README.md) |
 
 新增 project 后必须在本表追加一行，并把「项目」列链接到该项目的 `prN/readme.md`。
 
