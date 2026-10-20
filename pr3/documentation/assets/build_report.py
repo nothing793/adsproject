@@ -24,7 +24,7 @@ def figures(validation,destination,font_path):
     values=list(map(int,(validation/'inputs/sample_1.txt').read_text().split())); n,m=values[:2]
     grid=[values[2+r*m:2+(r+1)*m] for r in range(n)]
     step=95; left=280; top=110
-    draw.text((30,24),'样例 1：根据程序实际输出恢复的栅栏',fill='black',font=font)
+    draw.text((30,24),'样例 1：根据程序实际输出恢复的栅栏',fill='#202020',font=font)
     for r in range(n):
         draw.line((left,top+r*step,left+(m-1)*step,top+r*step),fill='#d7dde2',width=1)
     for c in range(m):
@@ -43,29 +43,29 @@ def figures(validation,destination,font_path):
             if grid[r][c]:
                 x,y=left+c*step,top+r*step
                 draw.ellipse((x-22,y-22,x+22,y+22),fill='white',outline='#225a82',width=2)
-                draw.text((x,y),str(grid[r][c]),fill='black',font=font,anchor='mm')
+                draw.text((x,y),str(grid[r][c]),fill='#202020',font=font,anchor='mm')
     for r in range(n):
-        draw.text((left-55,top+r*step),str(r+1),fill='black',font=small,anchor='mm')
+        draw.text((left-55,top+r*step),str(r+1),fill='#202020',font=small,anchor='mm')
     for c in range(m):
-        draw.text((left+c*step,top-52),str(c+1),fill='black',font=small,anchor='mm')
+        draw.text((left+c*step,top-52),str(c+1),fill='#202020',font=small,anchor='mm')
     image.save(destination/'sample_solution.png')
 
     summary=json.loads((validation/'summary.json').read_text(encoding='utf-8'))
     image=Image.new('RGB',(1120,650),'white'); draw=ImageDraw.Draw(image)
-    draw.text((30,20),'规模测试：三份同分布输入的进程墙钟时间中位数',fill='black',font=font)
+    draw.text((30,20),'规模测试：三份同分布输入的进程墙钟时间中位数',fill='#202020',font=font)
     left,top,width,height=115,100,780,410
     ymax=max(10,math.ceil(max(s['median_wall_ms'] for s in summary['sizes'])/10)*10)
     for tick in range(6):
         value=ymax*tick/5; y=top+height-height*tick/5
         draw.line((left,y,left+width,y),fill='#dce1e6',width=1)
-        draw.text((left-12,y),f'{value:.0f}',fill='black',font=small,anchor='rm')
-    draw.text((15,76),'毫秒',fill='black',font=small)
+        draw.text((left-12,y),f'{value:.0f}',fill='#202020',font=small,anchor='rm')
+    draw.text((15,76),'毫秒',fill='#202020',font=small)
     dimensions=[(2,50),(10,10),(25,25),(50,50)]
     for i,(n,m) in enumerate(dimensions):
         x=left+i*width/3
-        draw.text((x,top+height+30),f'{n}×{m}',fill='black',font=font,anchor='mm')
+        draw.text((x,top+height+30),f'{n}×{m}',fill='#202020',font=font,anchor='mm')
     draw.rectangle((925,100,1100,370),outline='#c4ccd3',width=1)
-    draw.text((980,114),'图例',fill='black',font=small)
+    draw.text((980,114),'图例',fill='#202020',font=small)
     for index,(probability,color) in enumerate(((.15,'#20639b'),(.4,'#d66a20'),(.75,'#25834b'),(1.,'#754a9b'))):
         values=[next(s['median_wall_ms'] for s in summary['sizes'] if (s['rows'],s['columns'],s['probability'])==(n,m,probability)) for n,m in dimensions]
         points=[(left+i*width/3,top+height-height*value/ymax) for i,value in enumerate(values)]
@@ -74,16 +74,16 @@ def figures(validation,destination,font_path):
             draw.ellipse((x-5,y-5,x+5,y+5),fill=color)
         y=174+index*52
         draw.line((938,y,968,y),fill=color,width=4)
-        draw.text((980,y),f'p={probability:g}',fill='black',font=small,anchor='lm')
-    draw.text((115,590),'p 为生成单位边的概率；计时包含进程启动与输入输出。',fill='black',font=small)
+        draw.text((980,y),f'p={probability:g}',fill='#202020',font=small,anchor='lm')
+    draw.text((115,590),'p 为生成单位边的概率；计时包含进程启动与输入输出。',fill='#202020',font=small)
     image.save(destination/'runtime.png')
 
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--validation',required=True,type=Path)
-    parser.add_argument('--font',type=Path,default=Path('C:/Windows/Fonts/simsun.ttc'))
-    parser.add_argument('--bold-font',type=Path,default=Path('C:/Windows/Fonts/simhei.ttf'))
+    parser.add_argument('--font',type=Path,default=Path('C:/Windows/Fonts/msyh.ttc'))
+    parser.add_argument('--bold-font',type=Path,default=Path('C:/Windows/Fonts/msyhbd.ttc'))
     args=parser.parse_args(); validation=args.validation.resolve(); destination=PROJECT/'documentation'
     s=json.loads((validation/'summary.json').read_text(encoding='utf-8'))
     assert s['failed']==0

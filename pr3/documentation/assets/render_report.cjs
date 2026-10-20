@@ -25,15 +25,16 @@ const {chromium} = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
       mathErrors: document.querySelectorAll('[data-mml-node="merror"]').length,
       highlightedBlocks: document.querySelectorAll('pre code.hljs').length,
       cKeywords: document.querySelectorAll('code.language-c .hljs-keyword').length,
+      textColors: [...new Set([...document.querySelectorAll('h1,h2,h3,p,td,th,code,code span,mjx-container,figcaption')].map(x => getComputedStyle(x).color))],
       overflowing: [...document.querySelectorAll('mjx-container[display="true"] svg')].filter(x => x.getBoundingClientRect().width > document.body.getBoundingClientRect().width + 2).length
     }));
-    if (!statistics.formulas || !statistics.displayFormulas || statistics.mathErrors || statistics.overflowing || !statistics.cKeywords) {
+    if (!statistics.formulas || !statistics.displayFormulas || statistics.mathErrors || statistics.overflowing || !statistics.cKeywords || statistics.textColors.length !== 1) {
       throw new Error('公式或高亮校验失败: ' + JSON.stringify(statistics));
     }
     await page.emulateMedia({media: 'print'});
     await page.pdf({path: destination, format: 'A4', preferCSSPageSize: true, printBackground: true,
       displayHeaderFooter: true, headerTemplate: '<span></span>',
-      footerTemplate: '<div style="width:100%;text-align:center;font:9px serif;color:#000"><span class="pageNumber"></span></div>'});
+      footerTemplate: '<div style="width:100%;text-align:center;font-family:Microsoft YaHei,sans-serif;font-size:9px;color:#202020"><span class="pageNumber"></span></div>'});
     // 保存已排版的 HTML，移除网络脚本；后续阅读无需重新加载 MathJax。
     await page.evaluate(() => document.querySelectorAll('script').forEach(x => x.remove()));
     fs.writeFileSync(source, await page.content(), 'utf8');

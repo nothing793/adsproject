@@ -6,7 +6,7 @@
 python documentation/assets/build_report.py --validation path/to/validation-20261020
 ```
 
-运行目录为 `pr3/`。图表依赖 Python 3 和 Pillow，`--font` 可指定图表中文字体，默认 `C:/Windows/Fonts/simsun.ttc`。PDF 正文采用系统宋体和黑体。
+运行目录为 `pr3/`。图表依赖 Python 3 和 Pillow，`--font` 可指定图表中文字体，默认 `C:/Windows/Fonts/msyh.ttc`。PDF 正文、标题、表格和图注统一采用微软雅黑字族，正文与数学公式颜色均为 `#202020`。独立公式约 11.5 pt，正文约 11 pt；代码采用同色关键词字重高亮。
 
 | 文件 | 功能 |
 | --- | --- |

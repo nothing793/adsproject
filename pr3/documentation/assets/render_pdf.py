@@ -59,7 +59,16 @@ def markdown_body(source):
         paragraph=[line]; i+=1
         while i<len(lines) and lines[i].strip() and not lines[i].startswith(('#','|','```','![','$$')):
             paragraph.append(lines[i].strip()); i+=1
-        blocks.append('<p>'+'<br>'.join(inline(p) for p in paragraph)+'</p>')
+        following=i
+        while following<len(lines) and not lines[following].strip():
+            following+=1
+        classes=[]
+        if following<len(lines) and lines[following].strip()=='$$':
+            classes.append('math-lead')
+        if re.match(r'^\[\d+\]',paragraph[0]):
+            classes.append('reference')
+        attribute=' class="'+' '.join(classes)+'"' if classes else ''
+        blocks.append('<p'+attribute+'>'+'<br>'.join(inline(p) for p in paragraph)+'</p>')
     blocks.append('</main>' if not cover else '</header>')
     return '\n'.join(blocks)
 
@@ -69,30 +78,34 @@ TEMPLATE=r'''<!DOCTYPE html>
 <style>
 @page {size:A4; margin:20mm 18mm 18mm}
 * {box-sizing:border-box}
-body {max-width:174mm; margin:0 auto; font:11pt/1.7 "SimSun","Noto Serif CJK SC",serif; color:#111}
+:root {--ink:#202020; --paper:#fff; --panel:#f6f6f6; --rule:#d7d7d7}
+body {max-width:174mm; margin:0 auto; font:400 11pt/1.7 "Microsoft YaHei","Noto Sans CJK SC",sans-serif; color:var(--ink); background:var(--paper)}
 .cover {min-height:240mm; break-after:page; display:flex; flex-direction:column; align-items:center; justify-content:center}
-.cover h1 {font-size:24pt; margin-bottom:25mm}
+.cover h1 {font-size:23pt; font-weight:600; margin-bottom:25mm}
 .cover p {max-width:150mm; text-align:center; font-size:12pt}
-h2 {font:700 17pt/1.5 "SimHei","Noto Sans CJK SC",sans-serif; margin:22pt 0 13pt; break-after:avoid}
-h3 {font:700 12pt/1.5 "SimHei","Noto Sans CJK SC",sans-serif; margin:16pt 0 8pt; break-after:avoid}
-p {margin:7pt 0 10pt; orphans:3; widows:3; text-align:justify}
-table {width:100%; border-collapse:collapse; font-size:9pt; line-height:1.5; margin:12pt 0 16pt; table-layout:auto}
+h2 {font:600 16pt/1.5 "Microsoft YaHei","Noto Sans CJK SC",sans-serif; margin:22pt 0 13pt; break-after:avoid; color:var(--ink)}
+h3 {font:600 11.5pt/1.6 "Microsoft YaHei","Noto Sans CJK SC",sans-serif; margin:16pt 0 8pt; break-after:avoid; color:var(--ink)}
+p {margin:6pt 0 8pt; orphans:3; widows:3; text-align:justify}
+p.math-lead {break-after:avoid}
+p.reference {text-align:left; overflow-wrap:anywhere}
+table {width:100%; border-collapse:collapse; font-size:9.5pt; line-height:1.5; margin:10pt 0 14pt; table-layout:auto; color:var(--ink)}
 thead {display:table-header-group}
 tr {break-inside:avoid}
-th,td {padding:5pt 6pt; border-bottom:.4pt solid #ccd3da; text-align:left; overflow-wrap:anywhere; vertical-align:top}
-th {background:#edf1f5; font-family:"SimHei","Noto Sans CJK SC",sans-serif; font-weight:normal}
-code {font:9.2pt/1.5 Consolas,"DejaVu Sans Mono",monospace; overflow-wrap:anywhere}
-pre {background:#f4f6f8; border-left:2.5pt solid #687f94; padding:10pt 12pt; margin:12pt 0 16pt; break-inside:avoid; white-space:pre-wrap; overflow-wrap:anywhere; tab-size:4}
-pre code {font-size:9.3pt; line-height:1.5; white-space:pre-wrap}
-.hljs {color:#1e293b}.hljs-keyword,.hljs-selector-tag {color:#174c9b;font-weight:bold}
-.hljs-title,.hljs-built_in {color:#703591}.hljs-string {color:#24633d}.hljs-number,.hljs-literal {color:#a04a12}
-.hljs-comment {color:#596c59;font-style:italic}.hljs-meta {color:#904634}
-.equation {font-size:12pt; margin:13pt 0 15pt; break-inside:avoid; overflow:visible}
+th,td {padding:5pt 6pt; border-bottom:.4pt solid var(--rule); text-align:left; overflow-wrap:anywhere; vertical-align:top; color:var(--ink)}
+th {background:#f0f0f0; font-family:inherit; font-weight:600}
+code {font:400 10pt/1.6 Consolas,"DejaVu Sans Mono",monospace; color:var(--ink); overflow-wrap:anywhere}
+pre {background:var(--panel); border:0.5pt solid var(--rule); padding:10pt 12pt; margin:12pt 0 16pt; break-inside:avoid; white-space:pre-wrap; overflow-wrap:anywhere; tab-size:4; color:var(--ink)}
+pre code {font-size:9.8pt; line-height:1.5; white-space:pre-wrap}
+.hljs,.hljs * {color:var(--ink)!important}
+.hljs-keyword,.hljs-selector-tag,.hljs-literal {font-weight:600}
+.hljs-comment {font-style:italic; font-weight:400}
+.equation {font-size:11.5pt; font-weight:400; color:var(--ink); margin:13pt 0 15pt; break-inside:avoid; overflow:visible}
+mjx-container {font-weight:400!important; color:var(--ink)!important}
 mjx-container[jax="SVG"] {font-size:100%!important}
 mjx-container[display="true"] {margin:.5em 0!important}
 figure {margin:14pt 0 18pt; break-inside:avoid}
 figure img {display:block; width:100%; max-height:84mm; object-fit:contain}
-figcaption {font-size:9pt; margin-top:6pt; color:#111}
+figcaption {font-size:9.5pt; margin-top:6pt; color:var(--ink)}
 @media screen {body {padding:20px 0; background:#fff}}
 </style>
 <script>
@@ -104,7 +117,7 @@ window.MathJax={tex:{inlineMath:[['$','$']],displayMath:[['$$','$$']],processEsc
 
 
 def render(source, destination, font=None, bold_font=None):
-    # font 参数保留与图表生成入口兼容；PDF 正文字体使用系统宋体和黑体。
+    # font 参数保留与图表入口兼容；报告采用统一字族及单一文字颜色。
     page=destination.with_suffix('.html')
     page.write_text(TEMPLATE.replace('__CONTENT__',markdown_body(source)),encoding='utf-8')
     node=os.environ.get('NODE_EXE') or shutil.which('node')
