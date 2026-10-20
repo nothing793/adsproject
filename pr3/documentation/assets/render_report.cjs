@@ -25,10 +25,15 @@ const {chromium} = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
       mathErrors: document.querySelectorAll('[data-mml-node="merror"]').length,
       highlightedBlocks: document.querySelectorAll('pre code.hljs').length,
       cKeywords: document.querySelectorAll('code.language-c .hljs-keyword').length,
-      textColors: [...new Set([...document.querySelectorAll('h1,h2,h3,p,td,th,code,code span,mjx-container,figcaption')].map(x => getComputedStyle(x).color))],
+      textColors: [...new Set([...document.querySelectorAll('h1,h2,h3,p,td,th,mjx-container,figcaption,.code-label')].map(x => getComputedStyle(x).color))],
+      codeColors: [...new Set([...document.querySelectorAll('pre code,pre code span')].map(x => getComputedStyle(x).color))],
+      codeLabels: document.querySelectorAll('.code-label').length,
+      plainOutputs: document.querySelectorAll('code.nohighlight:not(.hljs)').length,
+      overflowingCode: [...document.querySelectorAll('pre code')].filter(x => x.scrollWidth > x.clientWidth + 1).length,
       overflowing: [...document.querySelectorAll('mjx-container[display="true"] svg')].filter(x => x.getBoundingClientRect().width > document.body.getBoundingClientRect().width + 2).length
     }));
-    if (!statistics.formulas || !statistics.displayFormulas || statistics.mathErrors || statistics.overflowing || !statistics.cKeywords || statistics.textColors.length !== 1) {
+    const allowedCodeColors = ['rgb(32, 32, 32)', 'rgb(39, 75, 107)'];
+    if (!statistics.formulas || !statistics.displayFormulas || statistics.mathErrors || statistics.overflowing || statistics.overflowingCode || !statistics.cKeywords || statistics.textColors.length !== 1 || statistics.textColors[0] !== allowedCodeColors[0] || statistics.codeColors.some(color => !allowedCodeColors.includes(color)) || statistics.highlightedBlocks !== 5 || statistics.codeLabels !== 6 || statistics.plainOutputs !== 1) {
       throw new Error('公式或高亮校验失败: ' + JSON.stringify(statistics));
     }
     await page.emulateMedia({media: 'print'});

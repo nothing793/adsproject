@@ -89,7 +89,7 @@ def build_formula(garden):
     for vertex in connectors(garden):
         S, k = incident_edges(vertex), degree(vertex)
         if k > len(S):
-            add_clause(solver, [])  # contradiction
+            add_clause(solver, [])  # 空子句表示矛盾
         else:
             for A in subsets(S, size=k + 1):
                 add_clause(solver, [NOT(e) for e in A])
@@ -125,14 +125,19 @@ def solve(formula):
             enqueue(saved_phase(variable), reason=None)
 ```
 
-实际 C 实现中，冲突分析与回跳后的关键语句如下。学习子句保存后立即推导其断言文字；相关数组和不变量的中文注释见 `code/sat.c`。
+实际 C 实现中，冲突分析与回跳后的关键语句如下（为便于阅读，调整了空白和分行）。学习子句保存后立即推导其断言文字；相关数组和不变量的中文注释见 `code/sat.c`。
 
 ```c
+int backtrack, id;
+
 backtrack = analyze(s, conflict);
 cancel_until(s, backtrack);
 id = store_clause(s, s->learned.data, s->learned.count);
 ++s->stats.learned;
-if (!enqueue(s, s->learned.data[0], id)) return 0;
+
+if (!enqueue(s, s->learned.data[0], id)) {
+    return 0;
+}
 ```'''
     report=report[:start]+replacement+report[end:]
     report=report.replace('每个连接器恰好使用 k 个方向',r'每个连接器恰好使用 $k_v$ 个方向')

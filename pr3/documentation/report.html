@@ -2,7 +2,7 @@
 <style>
 @page {size:A4; margin:20mm 18mm 18mm}
 * {box-sizing:border-box}
-:root {--ink:#202020; --paper:#fff; --panel:#f6f6f6; --rule:#d7d7d7}
+:root {--ink:#202020; --syntax:#274b6b; --paper:#fff; --panel:#f7f8f9; --rule:#d7d7d7}
 body {max-width:174mm; margin:0 auto; font:400 11pt/1.7 "Microsoft YaHei","Noto Sans CJK SC",sans-serif; color:var(--ink); background:var(--paper)}
 .cover {min-height:240mm; break-after:page; display:flex; flex-direction:column; align-items:center; justify-content:center}
 .cover h1 {font-size:23pt; font-weight:600; margin-bottom:25mm}
@@ -10,19 +10,21 @@ body {max-width:174mm; margin:0 auto; font:400 11pt/1.7 "Microsoft YaHei","Noto 
 h2 {font:600 16pt/1.5 "Microsoft YaHei","Noto Sans CJK SC",sans-serif; margin:22pt 0 13pt; break-after:avoid; color:var(--ink)}
 h3 {font:600 11.5pt/1.6 "Microsoft YaHei","Noto Sans CJK SC",sans-serif; margin:16pt 0 8pt; break-after:avoid; color:var(--ink)}
 p {margin:6pt 0 8pt; orphans:3; widows:3; text-align:justify}
-p.math-lead {break-after:avoid}
+p.math-lead,p.code-lead {break-after:avoid}
 p.reference {text-align:left; overflow-wrap:anywhere}
 table {width:100%; border-collapse:collapse; font-size:9.5pt; line-height:1.5; margin:10pt 0 14pt; table-layout:auto; color:var(--ink)}
 thead {display:table-header-group}
 tr {break-inside:avoid}
 th,td {padding:5pt 6pt; border-bottom:.4pt solid var(--rule); text-align:left; overflow-wrap:anywhere; vertical-align:top; color:var(--ink)}
 th {background:#f0f0f0; font-family:inherit; font-weight:600}
-code {font:400 10pt/1.6 Consolas,"DejaVu Sans Mono",monospace; color:var(--ink); overflow-wrap:anywhere}
-pre {background:var(--panel); border:0.5pt solid var(--rule); padding:10pt 12pt; margin:12pt 0 16pt; break-inside:avoid; white-space:pre-wrap; overflow-wrap:anywhere; tab-size:4; color:var(--ink)}
-pre code {font-size:9.8pt; line-height:1.5; white-space:pre-wrap}
-.hljs,.hljs * {color:var(--ink)!important}
-.hljs-keyword,.hljs-selector-tag,.hljs-literal {font-weight:600}
-.hljs-comment {font-style:italic; font-weight:400}
+code {font:400 10pt/1.6 Consolas,"Microsoft YaHei",monospace; color:var(--ink); overflow-wrap:anywhere}
+.code-block {background:var(--panel); border:.5pt solid var(--rule); border-radius:3pt; margin:10pt 0 14pt; break-inside:avoid; overflow:hidden}
+.code-label {font-size:8.5pt; font-weight:600; line-height:1.4; color:var(--ink); padding:6pt 11pt; border-bottom:.5pt solid var(--rule); background:#eef0f2}
+pre {padding:9pt 11pt 11pt; margin:0; white-space:pre; tab-size:4; color:var(--ink)}
+pre code {display:block; font-size:9.4pt; line-height:1.55; white-space:pre; overflow-wrap:normal}
+.hljs,.hljs * {color:var(--ink)}
+.hljs .hljs-keyword,.hljs .hljs-type,.hljs .hljs-literal {color:var(--syntax); font-weight:600}
+.hljs-comment {font-style:normal; font-weight:400}
 .equation {font-size:11.5pt; font-weight:400; color:var(--ink); margin:13pt 0 15pt; break-inside:avoid; overflow:visible}
 mjx-container {font-weight:400!important; color:var(--ink)!important}
 mjx-container[jax="SVG"] {font-size:100%!important}
@@ -246,8 +248,8 @@ mjx-container[jax="SVG"] path[data-c], mjx-container[jax="SVG"] use[data-c] {
 <div class="equation"><mjx-container class="MathJax" jax="SVG" display="true" style="position: relative;"><svg xmlns="http://www.w3.org/2000/svg" width="16.77ex" height="5.182ex" role="img" focusable="false" viewBox="0 -950 7412.4 2290.4" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" style="vertical-align: -3.032ex;"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math"><g data-mml-node="munder"><g data-mml-node="mo" transform="translate(169.8,0)"><use data-c="2211" xlink:href="#MJX-TEX-LO-2211"></use></g><g data-mml-node="TeXAtom" transform="translate(0,-1123.3) scale(0.707)" data-mjx-texclass="ORD"><g data-mml-node="mi"><use data-c="1D463" xlink:href="#MJX-TEX-I-1D463"></use></g><g data-mml-node="mo" transform="translate(485,0)"><use data-c="2208" xlink:href="#MJX-TEX-N-2208"></use></g><g data-mml-node="msub" transform="translate(1152,0)"><g data-mml-node="mi"><use data-c="1D434" xlink:href="#MJX-TEX-I-1D434"></use></g><g data-mml-node="mi" transform="translate(783,-150) scale(0.707)"><use data-c="1D436" xlink:href="#MJX-TEX-I-1D436"></use></g></g></g></g><g data-mml-node="msub" transform="translate(1950.3,0)"><g data-mml-node="mi"><use data-c="1D458" xlink:href="#MJX-TEX-I-1D458"></use></g><g data-mml-node="mi" transform="translate(554,-150) scale(0.707)"><use data-c="1D463" xlink:href="#MJX-TEX-I-1D463"></use></g></g><g data-mml-node="mo" transform="translate(3175,0)"><use data-c="3D" xlink:href="#MJX-TEX-N-3D"></use></g><g data-mml-node="munder" transform="translate(4230.8,0)"><g data-mml-node="mo" transform="translate(173,0)"><use data-c="2211" xlink:href="#MJX-TEX-LO-2211"></use></g><g data-mml-node="TeXAtom" transform="translate(0,-1100) scale(0.707)" data-mjx-texclass="ORD"><g data-mml-node="mi"><use data-c="1D463" xlink:href="#MJX-TEX-I-1D463"></use></g><g data-mml-node="mo" transform="translate(485,0)"><use data-c="2208" xlink:href="#MJX-TEX-N-2208"></use></g><g data-mml-node="msub" transform="translate(1152,0)"><g data-mml-node="mi"><use data-c="1D435" xlink:href="#MJX-TEX-I-1D435"></use></g><g data-mml-node="mi" transform="translate(792,-150) scale(0.707)"><use data-c="1D436" xlink:href="#MJX-TEX-I-1D436"></use></g></g></g></g><g data-mml-node="msub" transform="translate(6187.4,0)"><g data-mml-node="mi"><use data-c="1D458" xlink:href="#MJX-TEX-I-1D458"></use></g><g data-mml-node="mi" transform="translate(554,-150) scale(0.707)"><use data-c="1D463" xlink:href="#MJX-TEX-I-1D463"></use></g></g><g data-mml-node="mo" transform="translate(7134.4,0)"><use data-c="2E" xlink:href="#MJX-TEX-N-2E"></use></g></g></g></svg><mjx-assistive-mml unselectable="on" display="block"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><munder><mo data-mjx-texclass="OP">∑</mo><mrow data-mjx-texclass="ORD"><mi>v</mi><mo>∈</mo><msub><mi>A</mi><mi>C</mi></msub></mrow></munder><msub><mi>k</mi><mi>v</mi></msub><mo>=</mo><munder><mo data-mjx-texclass="OP">∑</mo><mrow data-mjx-texclass="ORD"><mi>v</mi><mo>∈</mo><msub><mi>B</mi><mi>C</mi></msub></mrow></munder><msub><mi>k</mi><mi>v</mi></msub><mo>.</mo></math></mjx-assistive-mml></mjx-container></div>
 <p>这些必要条件只用于提前判定矛盾，并未假定候选图总是二分图。测试中的五连接器矩形布局，在一条边上插入一个连接器后便形成可解的奇环。</p>
 <h3>2.3 建模伪代码</h3>
-<p>以下采用 Python 风格伪代码表示集合和循环，实际评测程序由 C99 实现。</p>
-<pre><code class="language-python hljs" data-highlighted="yes"><span class="hljs-keyword">def</span> <span class="hljs-title function_">build_formula</span>(<span class="hljs-params">garden</span>):
+<p class="code-lead">以下采用 Python 风格伪代码表示集合和循环，实际评测程序由 C99 实现。</p>
+<div class="code-block"><div class="code-label">Python 风格伪代码</div><pre><code class="language-python hljs" data-highlighted="yes"><span class="hljs-keyword">def</span> <span class="hljs-title function_">build_formula</span>(<span class="hljs-params">garden</span>):
     edges = scan_consecutive_connectors(garden)
     solver = create_solver(<span class="hljs-built_in">len</span>(edges))
     <span class="hljs-keyword">for</span> component <span class="hljs-keyword">in</span> candidate_components(edges):
@@ -255,7 +257,7 @@ mjx-container[jax="SVG"] path[data-c], mjx-container[jax="SVG"] use[data-c] {
     <span class="hljs-keyword">for</span> vertex <span class="hljs-keyword">in</span> connectors(garden):
         S, k = incident_edges(vertex), degree(vertex)
         <span class="hljs-keyword">if</span> k &gt; <span class="hljs-built_in">len</span>(S):
-            add_clause(solver, [])  <span class="hljs-comment"># contradiction</span>
+            add_clause(solver, [])  <span class="hljs-comment"># 空子句表示矛盾</span>
         <span class="hljs-keyword">else</span>:
             <span class="hljs-keyword">for</span> A <span class="hljs-keyword">in</span> subsets(S, size=k + <span class="hljs-number">1</span>):
                 add_clause(solver, [NOT(e) <span class="hljs-keyword">for</span> e <span class="hljs-keyword">in</span> A])
@@ -263,12 +265,12 @@ mjx-container[jax="SVG"] path[data-c], mjx-container[jax="SVG"] use[data-c] {
                 add_clause(solver, [e <span class="hljs-keyword">for</span> e <span class="hljs-keyword">in</span> B])
     <span class="hljs-keyword">for</span> h, v <span class="hljs-keyword">in</span> empty_cell_crossings(edges):
         add_clause(solver, [NOT(h), NOT(v)])
-    <span class="hljs-keyword">return</span> solver</code></pre>
+    <span class="hljs-keyword">return</span> solver</code></pre></div>
 <h3>2.4 约束求解</h3>
 <p>求解器使用冲突驱动子句学习（CDCL）。赋值后只检查刚刚变假的文字所在监视表。若子句能找到另一个非假的文字，就迁移监视；否则剩余监视文字必须被推导为真，或形成冲突。单位条件保存在赋值队列中，空子句立即表示矛盾。</p>
 <p>冲突发生后，沿赋值轨迹反向分析原因子句，并消解到学习子句中只剩一个当前层文字，即 First UIP。回跳到学习子句其他文字的最高层后，新的子句会立刻推导一个赋值。变量活动度增加，使近期冲突涉及的变量优先被选择；堆的比较规则相同时优先较小编号，保证运行可复现。</p>
-<p>重启在冲突预算达到阈值后执行，保留学习子句和已保存的分支相位。初始预算为 100，此后按 1.5 倍增长，达到上限附近后停止增长。当前版本不清理学习子句。所有内存分配均检查失败；运行资源错误不能被当作无解。</p>
-<pre><code class="language-python hljs" data-highlighted="yes"><span class="hljs-keyword">def</span> <span class="hljs-title function_">solve</span>(<span class="hljs-params">formula</span>):
+<p class="code-lead">重启在冲突预算达到阈值后执行，保留学习子句和已保存的分支相位。初始预算为 100，此后按 1.5 倍增长，达到上限附近后停止增长。当前版本不清理学习子句。所有内存分配均检查失败；运行资源错误不能被当作无解。</p>
+<div class="code-block"><div class="code-label">Python 风格伪代码</div><pre><code class="language-python hljs" data-highlighted="yes"><span class="hljs-keyword">def</span> <span class="hljs-title function_">solve</span>(<span class="hljs-params">formula</span>):
     enqueue_original_units(level=<span class="hljs-number">0</span>)
     <span class="hljs-keyword">while</span> <span class="hljs-literal">True</span>:
         conflict = propagate()
@@ -287,13 +289,18 @@ mjx-container[jax="SVG"] path[data-c], mjx-container[jax="SVG"] use[data-c] {
                 <span class="hljs-keyword">return</span> SAT
             variable = choose_by_activity()
             begin_level()
-            enqueue(saved_phase(variable), reason=<span class="hljs-literal">None</span>)</code></pre>
-<p>实际 C 实现中，冲突分析与回跳后的关键语句如下。学习子句保存后立即推导其断言文字；相关数组和不变量的中文注释见 <code>code/sat.c</code>。</p>
-<pre><code class="language-c hljs" data-highlighted="yes">backtrack = analyze(s, conflict);
+            enqueue(saved_phase(variable), reason=<span class="hljs-literal">None</span>)</code></pre></div>
+<p class="code-lead">实际 C 实现中，冲突分析与回跳后的关键语句如下（为便于阅读，调整了空白和分行）。学习子句保存后立即推导其断言文字；相关数组和不变量的中文注释见 <code>code/sat.c</code>。</p>
+<div class="code-block"><div class="code-label">C99 · 实现片段</div><pre><code class="language-c hljs" data-highlighted="yes"><span class="hljs-type">int</span> backtrack, id;
+
+backtrack = analyze(s, conflict);
 cancel_until(s, backtrack);
 id = store_clause(s, s-&gt;learned.data, s-&gt;learned.count);
 ++s-&gt;stats.learned;
-<span class="hljs-keyword">if</span> (!enqueue(s, s-&gt;learned.data[<span class="hljs-number">0</span>], id)) <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;</code></pre>
+
+<span class="hljs-keyword">if</span> (!enqueue(s, s-&gt;learned.data[<span class="hljs-number">0</span>], id)) {
+    <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;
+}</code></pre></div>
 <h3>2.5 正确性说明</h3>
 <p>必要性：任意合法栅栏都可分解为同一行或列相邻连接器之间的边，故对应候选边的一个赋值。每个连接器恰好使用 <mjx-container class="MathJax" jax="SVG" style="position: relative;"><svg xmlns="http://www.w3.org/2000/svg" width="2.142ex" height="1.927ex" role="img" focusable="false" viewBox="0 -694 946.9 851.8" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" style="vertical-align: -0.357ex;"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math"><g data-mml-node="msub"><g data-mml-node="mi"><use data-c="1D458" xlink:href="#MJX-TEX-I-1D458"></use></g><g data-mml-node="mi" transform="translate(554,-150) scale(0.707)"><use data-c="1D463" xlink:href="#MJX-TEX-I-1D463"></use></g></g></g></g></svg><mjx-assistive-mml unselectable="on" display="inline"><math xmlns="http://www.w3.org/1998/Math/MathML"><msub><mi>k</mi><mi>v</mi></msub></math></mjx-assistive-mml></mjx-container> 个方向，满足基数子句；没有空位置交叉，满足所有交叉互斥子句。分量必要条件由边对端点度数的贡献直接得到，不会排除合法布局。</p>
 <p>充分性：任意满足公式的赋值都在每个连接器上选出恰好 <mjx-container class="MathJax" jax="SVG" style="position: relative;"><svg xmlns="http://www.w3.org/2000/svg" width="2.142ex" height="1.927ex" role="img" focusable="false" viewBox="0 -694 946.9 851.8" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" style="vertical-align: -0.357ex;"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math"><g data-mml-node="msub"><g data-mml-node="mi"><use data-c="1D458" xlink:href="#MJX-TEX-I-1D458"></use></g><g data-mml-node="mi" transform="translate(554,-150) scale(0.707)"><use data-c="1D463" xlink:href="#MJX-TEX-I-1D463"></use></g></g></g></g></svg><mjx-assistive-mml unselectable="on" display="inline"><math xmlns="http://www.w3.org/1998/Math/MathML"><msub><mi>k</mi><mi>v</mi></msub></math></mjx-assistive-mml></mjx-container> 条边。候选边是端点之间没有其他连接器的直线，故没有悬空终点或无连接器转弯。互斥子句排除了所有内部空格上的水平、竖直交叉。将每条选中边同时写入两个端点的相反方向，便得到合法且互反一致的输出。</p>
@@ -309,8 +316,8 @@ id = store_clause(s, s-&gt;learned.data, s-&gt;learned.count);
 <p>逐例完整数据表为压缩包内的 <code>cases.csv</code>，每行包含用例编号、测试目的、尺寸、预期、实际、是否通过、墙钟时间及搜索统计。每个合法输入另附输入文件、原始输出和退出码；非法输入记录在 <code>logs/invalid_*.json</code>。下表列出题目样例和几何、图论边界用例，其余穷举及随机用例逐行保存在 CSV 中。</p>
 <table><thead><tr><th>用例</th><th>目的</th><th>预期</th><th>实测</th></tr></thead><tbody><tr><td>sample_1</td><td>题目样例及非唯一解几何检查</td><td>可解</td><td>通过</td></tr><tr><td>sample_2</td><td>题目样例及非唯一解几何检查</td><td>无解</td><td>通过</td></tr><tr><td>sample_3</td><td>题目样例及非唯一解几何检查</td><td>可解</td><td>通过</td></tr><tr><td>empty</td><td>无连接器，输出为空</td><td>可解</td><td>通过</td></tr><tr><td>single</td><td>孤立连接器</td><td>无解</td><td>通过</td></tr><tr><td>square</td><td>最小闭合栅栏</td><td>可解</td><td>通过</td></tr><tr><td>multiple</td><td>多解且不要求整体连通</td><td>可解</td><td>通过</td></tr><tr><td>too_many</td><td>边界可用方向不足</td><td>无解</td><td>通过</td></tr><tr><td>forced_cross</td><td>度数可满足但交叉导致无解</td><td>无解</td><td>通过</td></tr><tr><td>avoid_cross</td><td>存在交叉候选但可选择合法布局</td><td>可解</td><td>通过</td></tr><tr><td>shared_four</td><td>四路连接器处允许交汇</td><td>可解</td><td>通过</td></tr><tr><td>odd_cycle</td><td>含长边的奇环，不能假设候选图总为二分图</td><td>可解</td><td>通过</td></tr><tr><td>long_horizontal</td><td>跨越 48 个空格的长边</td><td>可解</td><td>通过</td></tr><tr><td>long_vertical</td><td>50 行长边</td><td>可解</td><td>通过</td></tr><tr><td>global_odd</td><td>度数和为奇数</td><td>无解</td><td>通过</td></tr><tr><td>cycles_25</td><td>满网格二度连接器；奇数阶二分图无二因子</td><td>无解</td><td>通过</td></tr><tr><td>bipartite_imbalance_50</td><td>二分分量两侧度数和不同，度数总和仍为偶数</td><td>无解</td><td>通过</td></tr></tbody></table>
 <h3>3.3 样例恢复结果</h3>
-<p>样例 1 的一次实际输出如下。样例 2 返回 <code>No Solution</code>；样例 3 通过几何校验。由于题目允许多解，判断依据是约束是否满足，而非文本是否与给定输出完全相同。</p>
-<pre><code class="language-text hljs language-plaintext" data-highlighted="yes">1 3 0 1 0 1
+<p class="code-lead">样例 1 的一次实际输出如下。样例 2 返回 <code>No Solution</code>；样例 3 通过几何校验。由于题目允许多解，判断依据是约束是否满足，而非文本是否与给定输出完全相同。</p>
+<div class="code-block"><div class="code-label">样例输出</div><pre><code class="nohighlight">1 3 0 1 0 1
 1 6 0 1 1 0
 2 1 0 0 0 1
 2 2 0 1 1 1
@@ -323,7 +330,7 @@ id = store_clause(s, s-&gt;learned.data, s-&gt;learned.count);
 4 6 0 1 0 0
 5 1 1 0 0 1
 5 3 0 0 1 1
-5 6 1 0 1 0</code></pre>
+5 6 1 0 1 0</code></pre></div>
 <figure><img src="sample_solution.png"><figcaption>图 1 样例 1 实际输出对应的布局</figcaption></figure>
 <h3>3.4 SAT 核心独立测试</h3>
 <p>SAT 核心另使用 3004 个公式验证：3 个空公式、空子句与矛盾单位条件的基础用例，3,000 个 1 至 10 变量的固定随机公式，以及一个 7 鸽 6 孔不可满足公式。随机公式逐一枚举全部真值赋值；若 C 求解器返回 SAT，还逐条检查其模型是否满足所有原始子句。</p>
@@ -363,15 +370,15 @@ id = store_clause(s, s-&gt;learned.data, s-&gt;learned.count);
 <p>测试覆盖不能代替完整输入空间的证明。大规模试验主要采用已知合法布局反推输入，尚未穷举所有大规模不可满足布局。程序不设置“搜索超时就输出无解”的规则；测试驱动中的超时会作为测试失败抛出。题面未设置 Bonus，本报告不另行虚构扩展评分项。</p>
 <h2>Chapter 5 复现与提交组织</h2>
 <h3>5.1 编译和运行</h3>
-<p>在 <code>pr3</code> 目录运行以下命令。程序只依赖 C99 标准库，不链接第三方求解器。</p>
-<pre><code class="language-bash hljs" data-highlighted="yes">gcc -std=c99 -O2 -Wall -Wextra -Wpedantic \
+<p class="code-lead">在 <code>pr3</code> 目录运行以下命令。程序只依赖 C99 标准库，不链接第三方求解器。</p>
+<div class="code-block"><div class="code-label">Bash · 复现命令</div><pre><code class="language-bash hljs" data-highlighted="yes">gcc -std=c99 -O2 -Wall -Wextra -Wpedantic \
     code/main.c code/fence.c code/sat.c -o fence
 ./fence &lt; input.txt
-./fence --stats &lt; input.txt</code></pre>
+./fence --stats &lt; input.txt</code></pre></div>
 <p><code>--stats</code> 将变量数、原始子句数、交叉点、分支、传播、冲突、学习及重启计数以 JSON 写入标准错误，不改变标准输出。Windows PowerShell 中可先生成 <code>fence.exe</code>，然后使用 <code>Get-Content input.txt | ./fence.exe</code>。</p>
 <h3>5.2 重新验证与生成报告</h3>
-<pre><code class="language-bash hljs" data-highlighted="yes">python code/tests/run_tests.py --output testresult/run
-python documentation/assets/build_report.py --validation testresult/run</code></pre>
+<div class="code-block"><div class="code-label">Bash · 复现命令</div><pre><code class="language-bash hljs" data-highlighted="yes">python code/tests/run_tests.py --output testresult/run
+python documentation/assets/build_report.py --validation testresult/run</code></pre></div>
 <p>测试仅依赖 Python 标准库与 gcc；图表生成依赖 Pillow；PDF 排版依赖 Node.js、Playwright、Edge 和 MathJax、highlight.js，浏览器采用系统中文字体，详见 <code>documentation/assets/README.md</code>。文档工具不参与求解和正确性判定。公式使用 LaTeX 语法，由 MathJax 生成矢量字形；代码由 highlight.js 着色。图像画布存储随像素数量线性增长，文字和公式排版量随文档内容增长。</p>
 <p><code>code/</code> 保存源码、接口与验证程序；<code>documentation/</code> 保存 Markdown、PDF、结果图及生成工具；<code>testresult/validation-20261020.zip</code> 只收录测试材料和结果，不重复打包代码或报告。该 ZIP 中包含测试环境、完整逐例 CSV、输入输出、SAT 测试公式、原始搜索统计、编译命令和源码 SHA-256 校验清单。各评分条目与章节的映射见 <code>pr3/readme.md</code>。</p>
 <h2>参考文献</h2>

@@ -6,7 +6,7 @@
 python documentation/assets/build_report.py --validation path/to/validation-20261020
 ```
 
-运行目录为 `pr3/`。图表依赖 Python 3 和 Pillow，`--font` 可指定图表中文字体，默认 `C:/Windows/Fonts/msyh.ttc`。PDF 正文、标题、表格和图注统一采用微软雅黑字族，正文与数学公式颜色均为 `#202020`。独立公式约 11.5 pt，正文约 11 pt；代码采用同色关键词字重高亮。
+运行目录为 `pr3/`。图表依赖 Python 3 和 Pillow，`--font` 可指定图表中文字体，默认 `C:/Windows/Fonts/msyh.ttc`。PDF 正文、标题、表格和图注统一采用微软雅黑字族，正文与数学公式颜色均为 `#202020`。独立公式约 11.5 pt，正文约 11 pt。代码约 9.4 pt，仅关键字、类型和语言常量使用 `#274b6b`；普通代码、注释和样例输出保持 `#202020`。代码面板分别标注伪代码、C99、Bash 或样例输出，避免将数值结果误作程序高亮。
 
 | 文件 | 功能 |
 | --- | --- |
@@ -25,4 +25,4 @@ PDF 导出还需要 Node.js、Playwright 和 Edge。`PLAYWRIGHT_MODULE` 可指�
 python documentation/assets/render_pdf.py documentation/report.md documentation/report.pdf
 ```
 
-行内公式使用 `$...$`，独立公式使用单独成行的 `$$`，推导对齐使用 `aligned`。C、Python 风格伪代码和 Bash 示例分别指定代码块语言。导出前检查公式错误、横向溢出及 C 关键字高亮；输出图片不含网页页脚，PDF 页脚仅显示页码。
+行内公式使用 `$...$`，独立公式使用单独成行的 `$$`，推导对齐使用 `aligned`。C、Python 风格伪代码和 Bash 示例分别指定代码块语言。导出前检查公式错误、公式和代码横向溢出、正文颜色一致性、代码配色及语言标签；样例输出不执行语法高亮。输出图片不含网页页脚，PDF 页脚仅显示页码。

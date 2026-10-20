@@ -33,7 +33,13 @@ def markdown_body(source):
             language=line[3:].strip() or 'text'; code=[]; i+=1
             while i<len(lines) and not lines[i].startswith('```'):
                 code.append(lines[i]); i+=1
-            blocks.append('<pre><code class="language-'+html.escape(language)+'">'+html.escape('\n'.join(code))+'</code></pre>'); i+=1; continue
+            labels={'python':'Python 风格伪代码', 'c':'C99 · 实现片段',
+                    'bash':'Bash · 复现命令', 'text':'样例输出'}
+            label=labels.get(language,language)
+            code_class='nohighlight' if language=='text' else 'language-'+language
+            blocks.append('<div class="code-block"><div class="code-label">'+html.escape(label)+
+                          '</div><pre><code class="'+html.escape(code_class)+'">'+
+                          html.escape('\n'.join(code))+'</code></pre></div>'); i+=1; continue
         image=re.fullmatch(r'!\[([^]]*)\]\(([^)]+)\)',line)
         if image:
             blocks.append('<figure><img src="'+html.escape(image[2],quote=True)+'"><figcaption>'+inline(image[1])+'</figcaption></figure>'); i+=1; continue
@@ -65,6 +71,8 @@ def markdown_body(source):
         classes=[]
         if following<len(lines) and lines[following].strip()=='$$':
             classes.append('math-lead')
+        if following<len(lines) and lines[following].startswith('```'):
+            classes.append('code-lead')
         if re.match(r'^\[\d+\]',paragraph[0]):
             classes.append('reference')
         attribute=' class="'+' '.join(classes)+'"' if classes else ''
@@ -78,7 +86,7 @@ TEMPLATE=r'''<!DOCTYPE html>
 <style>
 @page {size:A4; margin:20mm 18mm 18mm}
 * {box-sizing:border-box}
-:root {--ink:#202020; --paper:#fff; --panel:#f6f6f6; --rule:#d7d7d7}
+:root {--ink:#202020; --syntax:#274b6b; --paper:#fff; --panel:#f7f8f9; --rule:#d7d7d7}
 body {max-width:174mm; margin:0 auto; font:400 11pt/1.7 "Microsoft YaHei","Noto Sans CJK SC",sans-serif; color:var(--ink); background:var(--paper)}
 .cover {min-height:240mm; break-after:page; display:flex; flex-direction:column; align-items:center; justify-content:center}
 .cover h1 {font-size:23pt; font-weight:600; margin-bottom:25mm}
@@ -86,19 +94,21 @@ body {max-width:174mm; margin:0 auto; font:400 11pt/1.7 "Microsoft YaHei","Noto 
 h2 {font:600 16pt/1.5 "Microsoft YaHei","Noto Sans CJK SC",sans-serif; margin:22pt 0 13pt; break-after:avoid; color:var(--ink)}
 h3 {font:600 11.5pt/1.6 "Microsoft YaHei","Noto Sans CJK SC",sans-serif; margin:16pt 0 8pt; break-after:avoid; color:var(--ink)}
 p {margin:6pt 0 8pt; orphans:3; widows:3; text-align:justify}
-p.math-lead {break-after:avoid}
+p.math-lead,p.code-lead {break-after:avoid}
 p.reference {text-align:left; overflow-wrap:anywhere}
 table {width:100%; border-collapse:collapse; font-size:9.5pt; line-height:1.5; margin:10pt 0 14pt; table-layout:auto; color:var(--ink)}
 thead {display:table-header-group}
 tr {break-inside:avoid}
 th,td {padding:5pt 6pt; border-bottom:.4pt solid var(--rule); text-align:left; overflow-wrap:anywhere; vertical-align:top; color:var(--ink)}
 th {background:#f0f0f0; font-family:inherit; font-weight:600}
-code {font:400 10pt/1.6 Consolas,"DejaVu Sans Mono",monospace; color:var(--ink); overflow-wrap:anywhere}
-pre {background:var(--panel); border:0.5pt solid var(--rule); padding:10pt 12pt; margin:12pt 0 16pt; break-inside:avoid; white-space:pre-wrap; overflow-wrap:anywhere; tab-size:4; color:var(--ink)}
-pre code {font-size:9.8pt; line-height:1.5; white-space:pre-wrap}
-.hljs,.hljs * {color:var(--ink)!important}
-.hljs-keyword,.hljs-selector-tag,.hljs-literal {font-weight:600}
-.hljs-comment {font-style:italic; font-weight:400}
+code {font:400 10pt/1.6 Consolas,"Microsoft YaHei",monospace; color:var(--ink); overflow-wrap:anywhere}
+.code-block {background:var(--panel); border:.5pt solid var(--rule); border-radius:3pt; margin:10pt 0 14pt; break-inside:avoid; overflow:hidden}
+.code-label {font-size:8.5pt; font-weight:600; line-height:1.4; color:var(--ink); padding:6pt 11pt; border-bottom:.5pt solid var(--rule); background:#eef0f2}
+pre {padding:9pt 11pt 11pt; margin:0; white-space:pre; tab-size:4; color:var(--ink)}
+pre code {display:block; font-size:9.4pt; line-height:1.55; white-space:pre; overflow-wrap:normal}
+.hljs,.hljs * {color:var(--ink)}
+.hljs .hljs-keyword,.hljs .hljs-type,.hljs .hljs-literal {color:var(--syntax); font-weight:600}
+.hljs-comment {font-style:normal; font-weight:400}
 .equation {font-size:11.5pt; font-weight:400; color:var(--ink); margin:13pt 0 15pt; break-inside:avoid; overflow:visible}
 mjx-container {font-weight:400!important; color:var(--ink)!important}
 mjx-container[jax="SVG"] {font-size:100%!important}
